@@ -15,9 +15,19 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
+        $this->call([
+            UserRoleSeeder::class,
+            // ContactSeeder::class,
+            // KloterSeeder::class,
+            // KloterNumberSeeder::class,
+            // JapoanSeeder::class
+        ]);
         User::factory()->create([
             'name' => 'Test User',
             'email' => 'test@example.com',
+            'phone' => '081234567890',
+            'address' => 'Jl. Jend. Sudirman No. 1, Jakarta Pusat',
+            'user_roles_id' => rand(1, 3)
         ]);
     }
 }

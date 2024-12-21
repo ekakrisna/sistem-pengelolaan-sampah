@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('villages', function (Blueprint $table) {
             $table->char('id', 10)->primary();
-            $table->char('district_id', 6)->index('fk_district');
+            $table->char('district_id', 10)->index('fk_district');
             $table->string('name');
         });
     }
