@@ -11,12 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('packages', function (Blueprint $table) {
-            $table->bigInteger('id', true);
+        Schema::create('waste_categories', function (Blueprint $table) {
+            $table->bigInteger('id', true)->primary();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->enum('type', ['day', 'week', 'month', 'year'])->default('day');
-            $table->double('price');
             $table->timestamp('created_at')->nullable()->useCurrent();
             $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable()->useCurrent();
         });
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('packages');
+        Schema::dropIfExists('waste_categories');
     }
 };

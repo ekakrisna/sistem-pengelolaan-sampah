@@ -7,6 +7,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -20,11 +21,17 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $status
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * 
+ * @property PaymentMethod $payment_method
+ * @property User $user
+ * @property WasteTransaction $waste_transaction
  *
  * @package App\Models
  */
 class WasteTransactionDetail extends Model
 {
+	use HasFactory;
+
 	protected $table = 'waste_transaction_details';
 
 	protected $casts = [
@@ -41,4 +48,19 @@ class WasteTransactionDetail extends Model
 		'total_price',
 		'status'
 	];
+
+	public function payment_method()
+	{
+		return $this->belongsTo(PaymentMethod::class, 'payment_methods_id');
+	}
+
+	public function user()
+	{
+		return $this->belongsTo(User::class, 'users_id');
+	}
+
+	public function waste_transaction()
+	{
+		return $this->belongsTo(WasteTransaction::class, 'waste_transactions_id');
+	}
 }

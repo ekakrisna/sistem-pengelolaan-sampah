@@ -27,10 +27,10 @@ final class WasteManagementFactory extends Factory
     public function definition(): array
     {
         return [
-            'users_id' => fake()->randomNumber(),
-            'waste_categories_id' => fake()->randomNumber(),
-            'locations_id' => fake()->randomNumber(),
-            'packages_id' => fake()->randomNumber(),
+            'users_id' => \App\Models\User::factory(),
+            'packages_id' => \App\Models\Package::factory(),
+            'locations_id' => \App\Models\Location::factory(),
+            'pickup_schedule' => fake()->optional()->randomElement(['daily', 'weekly']),
             'pickup_time' => fake()->time(),
             'status' => fake()->randomNumber(1),
             'expired_at' => fake()->dateTime(),

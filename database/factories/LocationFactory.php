@@ -28,7 +28,7 @@ final class LocationFactory extends Factory
     {
         return [
             'users_id' => \App\Models\User::factory(),
-            'villages_id' => fake()->word,
+            'villages_id' => \App\Models\Village::factory(),
             'name' => fake()->name,
             'latitude' => fake()->optional()->latitude,
             'longitude' => fake()->optional()->longitude,

@@ -29,15 +29,7 @@ class UserRole extends Model
 {
 	use SoftDeletes, HasFactory;
 
-	protected $primaryKey = 'id';
-
 	protected $table = 'user_roles';
-
-	public $incrementing = true;
-
-	protected $casts = [
-		'id' => 'int'
-	];
 
 	protected $fillable = [
 		'name'

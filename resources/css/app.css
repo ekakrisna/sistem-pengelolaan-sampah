@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.custom-slick-next::after,
+.custom-slick-prev::after {
+    content: none !important;
+}

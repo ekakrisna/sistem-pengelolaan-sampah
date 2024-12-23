@@ -6,6 +6,8 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -16,11 +18,14 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $name
  * 
  * @property District $district
+ * @property Collection|Location[] $locations
  *
  * @package App\Models
  */
 class Village extends Model
 {
+	use HasFactory;
+
 	protected $table = 'villages';
 	public $incrementing = false;
 	public $timestamps = false;
@@ -33,5 +38,10 @@ class Village extends Model
 	public function district()
 	{
 		return $this->belongsTo(District::class);
+	}
+
+	public function locations()
+	{
+		return $this->hasMany(Location::class, 'villages_id');
 	}
 }

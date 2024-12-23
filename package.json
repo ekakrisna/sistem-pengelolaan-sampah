@@ -20,6 +20,8 @@
         "vite": "^5.0"
     },
     "dependencies": {
-        "antd": "^5.22.5"
+        "@ant-design/icons": "^5.5.2",
+        "antd": "^5.22.5",
+        "antd-mobile-icons": "^0.3.0"
     }
 }

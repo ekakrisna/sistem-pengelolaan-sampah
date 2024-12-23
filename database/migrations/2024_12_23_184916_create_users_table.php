@@ -12,16 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->bigIncrements('id')->change();
             $table->integer('user_roles_id')->index('fk_users_user_roles1_idx');
-            // $table->string('name');
-            // $table->string('email')->unique();
             $table->string('phone', 20)->unique('phone_unique');
-            $table->text('address');
-            // $table->timestamp('email_verified_at')->nullable();
-            // $table->string('password');
-            // $table->rememberToken();
-            // $table->timestamps();
         });
     }
 

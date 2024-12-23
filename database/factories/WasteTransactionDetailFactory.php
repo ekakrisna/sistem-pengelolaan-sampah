@@ -27,9 +27,9 @@ final class WasteTransactionDetailFactory extends Factory
     public function definition(): array
     {
         return [
-            'users_id' => fake()->randomNumber(),
-            'waste_transactions_id' => fake()->randomNumber(),
-            'payment_methods_id' => fake()->randomNumber(),
+            'users_id' => \App\Models\User::factory(),
+            'waste_transactions_id' => \App\Models\WasteTransaction::factory(),
+            'payment_methods_id' => \App\Models\PaymentMethod::factory(),
             'total_price' => fake()->randomFloat(2, 0, 99999999),
             'status' => fake()->optional()->randomElement(['pending', 'completed', 'failed']),
         ];

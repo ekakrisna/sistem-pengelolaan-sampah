@@ -11,12 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('waste_categories', function (Blueprint $table) {
-            $table->bigInteger('id')->primary();
+        Schema::create('locations', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->unsignedBigInteger('users_id')->index('index_locations_users_id');
+            $table->char('villages_id', 10)->index('fk_locations_villages1_idx');
             $table->string('name');
-            $table->text('description')->nullable();
+            $table->double('latitude')->nullable();
+            $table->double('longitude')->nullable();
             $table->timestamp('created_at')->nullable()->useCurrent();
             $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable()->useCurrent();
+            $table->dateTime('deleted_at')->nullable();
         });
     }
 
@@ -25,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('waste_categories');
+        Schema::dropIfExists('locations');
     }
 };

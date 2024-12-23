@@ -7,6 +7,8 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -24,12 +26,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $deleted_at
  * 
  * @property User $user
+ * @property Village $village
+ * @property Collection|Schedule[] $schedules
+ * @property Collection|WasteManagement[] $waste_managements
  *
  * @package App\Models
  */
 class Location extends Model
 {
-	use SoftDeletes;
+	use SoftDeletes, HasFactory;
 	protected $table = 'locations';
 
 	protected $casts = [
@@ -49,5 +54,20 @@ class Location extends Model
 	public function user()
 	{
 		return $this->belongsTo(User::class, 'users_id');
+	}
+
+	public function village()
+	{
+		return $this->belongsTo(Village::class, 'villages_id');
+	}
+
+	public function schedules()
+	{
+		return $this->hasMany(Schedule::class, 'locations_id');
+	}
+
+	public function waste_managements()
+	{
+		return $this->hasMany(WasteManagement::class, 'locations_id');
 	}
 }

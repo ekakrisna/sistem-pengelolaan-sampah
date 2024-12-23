@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('waste_managements', function (Blueprint $table) {
             $table->bigInteger('id', true);
-            $table->bigInteger('users_id');
-            $table->bigInteger('waste_categories_id');
-            $table->bigInteger('locations_id');
-            $table->bigInteger('packages_id');
+            $table->unsignedBigInteger('users_id')->index('fk_waste_managements_users1_idx');
+            $table->bigInteger('packages_id')->index('fk_waste_managements_packages1_idx');
+            $table->unsignedBigInteger('locations_id')->index('fk_waste_managements_locations1_idx');
+            $table->enum('pickup_schedule', ['daily', 'weekly'])->nullable();
             $table->time('pickup_time');
             $table->tinyInteger('status')->default(0);
             $table->dateTime('expired_at');

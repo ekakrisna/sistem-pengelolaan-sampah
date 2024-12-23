@@ -7,6 +7,8 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -19,11 +21,14 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $updated_at
  * 
  * @property WasteManagement $waste_management
+ * @property Collection|WasteTransactionDetail[] $waste_transaction_details
  *
  * @package App\Models
  */
 class WasteTransaction extends Model
 {
+	use HasFactory;
+
 	protected $table = 'waste_transactions';
 
 	protected $casts = [
@@ -39,5 +44,10 @@ class WasteTransaction extends Model
 	public function waste_management()
 	{
 		return $this->belongsTo(WasteManagement::class, 'waste_managements_id');
+	}
+
+	public function waste_transaction_details()
+	{
+		return $this->hasMany(WasteTransactionDetail::class, 'waste_transactions_id');
 	}
 }

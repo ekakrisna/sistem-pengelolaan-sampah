@@ -28,9 +28,9 @@ final class PackageFactory extends Factory
     {
         return [
             'name' => fake()->name,
-            'description' => fake()->optional()->text,
             'type' => fake()->randomElement(['day', 'week', 'month', 'year']),
             'price' => fake()->word,
+            'description' => fake()->optional()->text,
         ];
     }
 }
