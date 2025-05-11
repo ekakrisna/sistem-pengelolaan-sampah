@@ -2,8 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
+use App\Models\Province;
+use App\Models\City;
+use App\Models\District;
+use App\Models\Village;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -17,17 +21,45 @@ class UserFactory extends Factory
     protected static ?string $password;
 
     /**
+     * The name of the factory's corresponding model.
+     *
+     * @var class-string<\Illuminate\Database\Eloquent\Model>
+     */
+    protected $model = User::class;
+
+
+    /**
      * Define the model's default state.
      *
      * @return array<string, mixed>
      */
     public function definition(): array
     {
+        // Pilih provinsi acak
+        $province = Province::inRandomOrder()->first();
+
+        // Ambil city berdasarkan provinsi
+        $city = City::where('province_code', $province->code)->inRandomOrder()->first();
+
+        // Ambil district berdasarkan city
+        $district = District::where('city_code', $city->code)->inRandomOrder()->first();
+
+        // Ambil village berdasarkan district
+        $village = Village::where('district_code', $district->code)->inRandomOrder()->first();
+
         return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'name' => $this->faker->name,
+            'email' => $this->faker->unique()->safeEmail,
+            'phone' => '08' . $this->faker->numerify('##########'),
+            'password' => bcrypt('password'),
+            'role' => $this->faker->randomElement(['admin', 'petugas', 'customer']),
+
+            'province_id' => $province->code,
+            'city_id' => $city->code,
+            'district_id' => $district->code,
+            'village_id' => $village->code,
+
+            'address_detail' => $this->faker->streetAddress . ', ' . $this->faker->citySuffix,
             'remember_token' => Str::random(10),
         ];
     }
@@ -37,7 +69,7 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'email_verified_at' => null,
         ]);
     }
