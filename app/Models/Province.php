@@ -34,7 +34,7 @@ class Province extends Model
 
 	public function cities(): HasMany
 	{
-		return $this->hasMany(City::class);
+		return $this->hasMany(City::class, 'province_code', 'code');
 	}
 
 	public function users(): HasMany

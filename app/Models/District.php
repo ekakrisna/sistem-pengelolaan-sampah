@@ -37,12 +37,12 @@ class District extends Model
 
 	public function city(): BelongsTo
 	{
-		return $this->belongsTo(City::class);
+		return $this->belongsTo(City::class, 'city_code', 'code');
 	}
 
 	public function villages(): HasMany
 	{
-		return $this->hasMany(Village::class);
+		return $this->hasMany(Village::class, 'district_code', 'code');
 	}
 
 	public function users(): HasMany

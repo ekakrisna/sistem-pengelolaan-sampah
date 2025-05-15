@@ -37,12 +37,12 @@ class City extends Model
 
 	public function province(): BelongsTo
 	{
-		return $this->belongsTo(Province::class);
+		return $this->belongsTo(Province::class, 'province_code', 'code');
 	}
 
 	public function districts(): HasMany
 	{
-		return $this->hasMany(District::class);
+		return $this->hasMany(District::class, 'city_code', 'code');
 	}
 
 	public function users(): HasMany

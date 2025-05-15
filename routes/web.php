@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\PetugasController;
+use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -17,16 +18,19 @@ Route::get('/', function () {
     ]);
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::prefix('api')->name('api.')->group(function () {
+    Route::get('districts/{city}', [LocationController::class, 'districts'])->name('districts');
+    Route::get('villages/{district}', [LocationController::class, 'villages'])->name('villages');
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
         Route::resource('petugas', PetugasController::class)->only([
             'index',
             'store',

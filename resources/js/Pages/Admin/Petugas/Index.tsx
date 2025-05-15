@@ -1,6 +1,6 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { useForm, router, Head, usePage } from "@inertiajs/react";
-import { PageProps } from "@/types";
+import { PageProps, UserFormData } from "@/types";
 import { User } from "@/types";
 import { useState } from "react";
 import { Card, CardContent } from "@/Components/ui/card";
@@ -10,10 +10,20 @@ import {
     DialogTrigger,
     DialogTitle,
 } from "@/Components/ui/dialog";
+import {
+    Table,
+    TableHeader,
+    TableBody,
+    TableRow,
+    TableCell,
+    TableHead,
+    TableCaption,
+} from "@/Components/ui/table";
 
 import { Button } from "@/Components/ui/button";
-import { Label } from "@/Components/ui/label";
 import { Input } from "@/Components/ui/input";
+import PetugasForm from "@/Components/form/UserForm";
+import { Province } from "@/types/location";
 
 interface Props extends PageProps {
     petugas: {
@@ -24,40 +34,87 @@ interface Props extends PageProps {
         per_page: number;
         links: { url: string | null; label: string; active: boolean }[];
     };
+    filters: {
+        search: string;
+        page: number;
+        page_size: number;
+    };
+    provinces: Province[];
 }
 
-export default function PetugasIndex({ auth, petugas }: Props) {
-    console.log(petugas);
+export default function PetugasIndex({
+    auth,
+    petugas,
+    filters,
+    provinces,
+}: Props) {
+    console.log("PROVINCES", provinces);
+    const props = usePage().props;
+    console.log("PROPS", props);
     const [open, setOpen] = useState(false);
-    const [editing, setEditing] = useState<User | null>(null);
+    const [editing, setEditing] = useState<UserFormData | null>(null);
+    const [search, setSearch] = useState(filters.search || "");
 
-    const createForm = useForm({ name: "", email: "", phone: "" });
-    const editForm = useForm({ name: "", email: "", phone: "" });
+    const { data, setData, post, put, processing, reset } =
+        useForm<UserFormData>({
+            // id: "",
+            name: "",
+            email: "",
+            phone: "",
+            role: "petugas",
+            province_id: "",
+            city_id: "",
+            district_id: "",
+            village_id: "",
+            address_detail: "",
+        });
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        router.get(
+            route("admin.petugas.index"),
+            { search },
+            { preserveScroll: true, replace: true }
+        );
+    };
+
+    const handleReset = () => {
+        setSearch("");
+        router.get(route("admin.petugas.index"));
+    };
 
     const handleCreate = (e: React.FormEvent) => {
         e.preventDefault();
-        createForm.post(route("admin.petugas.store"), {
+        post(route("admin.petugas.store"), {
             onSuccess: () => {
-                createForm.reset();
+                reset();
                 setOpen(false);
             },
         });
     };
 
-    const handleEdit = (user: User) => {
+    const handleEdit = (user: UserFormData) => {
+        console.log("user", user);
         setEditing(user);
-        editForm.setData({
+        setData((previousData) => ({
+            ...previousData,
             name: user.name,
             email: user.email,
-            phone: user.phone ?? "",
-        });
+            phone: user.phone,
+            province_id: user.province_id,
+            city_id: user.city_id,
+            district_id: user.district_id,
+            village_id: user.village_id,
+            address_detail: user.address_detail,
+        }));
     };
 
     const submitEdit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!editing) return;
 
-        editForm.put(route("admin.petugas.update", editing.id), {
+        put(route("admin.petugas.update", editing.id), {
             onSuccess: () => setEditing(null),
         });
     };
@@ -81,7 +138,24 @@ export default function PetugasIndex({ auth, petugas }: Props) {
             <div className="px-4 py-6 mx-auto space-y-6 max-w-7xl sm:px-6 lg:px-8">
                 {/* Tambah Petugas */}
                 <div className="flex justify-end">
-                    <Dialog open={open} onOpenChange={setOpen}>
+                    <Dialog
+                        open={open}
+                        onOpenChange={() => {
+                            setOpen(!open);
+                            setEditing(null);
+                            setData({
+                                name: "",
+                                email: "",
+                                phone: "",
+                                role: "petugas",
+                                province_id: "",
+                                city_id: "",
+                                district_id: "",
+                                village_id: "",
+                                address_detail: "",
+                            });
+                        }}
+                    >
                         <DialogTrigger asChild>
                             <Button>Tambah Petugas</Button>
                         </DialogTrigger>
@@ -89,49 +163,12 @@ export default function PetugasIndex({ auth, petugas }: Props) {
                             <DialogTitle>Tambah Petugas</DialogTitle>
 
                             <form onSubmit={handleCreate} className="space-y-4">
-                                <div>
-                                    <Label htmlFor="name">Nama</Label>
-                                    <Input
-                                        id="name"
-                                        value={createForm.data.name}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "name",
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="email">Email</Label>
-                                    <Input
-                                        id="email"
-                                        value={createForm.data.email}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "email",
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="phone">No HP</Label>
-                                    <Input
-                                        id="phone"
-                                        value={createForm.data.phone}
-                                        onChange={(e) =>
-                                            createForm.setData(
-                                                "phone",
-                                                e.target.value
-                                            )
-                                        }
-                                    />
-                                </div>
-                                <Button
-                                    type="submit"
-                                    disabled={createForm.processing}
-                                >
+                                <PetugasForm
+                                    provinces={provinces}
+                                    value={data}
+                                    onChange={setData}
+                                />
+                                <Button type="submit" disabled={processing}>
                                     Simpan
                                 </Button>
                             </form>
@@ -142,44 +179,66 @@ export default function PetugasIndex({ auth, petugas }: Props) {
                 {/* Table */}
                 <Card>
                     <CardContent className="p-4 overflow-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="text-xs text-left text-gray-500 border-b">
-                                    <th className="py-2">Nama</th>
-                                    <th>Email</th>
-                                    <th>No HP</th>
-                                    <th colSpan={2}>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        {/* Search */}
+                        <form
+                            onSubmit={handleSearch}
+                            className="flex max-w-md gap-2 mb-4"
+                        >
+                            <Input
+                                type="text"
+                                placeholder="Cari petugas..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="flex-1"
+                            />
+                            <Button type="submit">Search</Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={handleReset}
+                            >
+                                Reset
+                            </Button>
+                        </form>
+
+                        <Table>
+                            <TableCaption>
+                                Daftar Petugas yang Terdaftar
+                            </TableCaption>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Nama</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>No HP</TableHead>
+                                    <TableHead>Aksi</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
                                 {petugas.data.map((p) => (
-                                    <tr
-                                        key={p.id}
-                                        className="border-b hover:bg-gray-50"
-                                    >
-                                        <td className="py-2">{p.name}</td>
-                                        <td>{p.email}</td>
-                                        <td>{p.phone}</td>
-                                        <td>
+                                    <TableRow key={p.id}>
+                                        <TableCell>{p.name}</TableCell>
+                                        <TableCell>{p.email}</TableCell>
+                                        <TableCell>{p.phone}</TableCell>
+                                        <TableCell className="space-x-2">
                                             <Button
                                                 variant="outline"
+                                                size="sm"
                                                 onClick={() => handleEdit(p)}
                                             >
                                                 Edit
                                             </Button>
-                                        </td>
-                                        <td>
                                             <Button
                                                 variant="destructive"
+                                                size="sm"
                                                 onClick={() => handleDelete(p)}
                                             >
                                                 Hapus
                                             </Button>
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
+                            </TableBody>
+                        </Table>
                     </CardContent>
                 </Card>
 
@@ -189,46 +248,12 @@ export default function PetugasIndex({ auth, petugas }: Props) {
                         <DialogTitle>Edit Petugas</DialogTitle>
 
                         <form onSubmit={submitEdit} className="space-y-4">
-                            <div>
-                                <Label htmlFor="edit-name">Nama</Label>
-                                <Input
-                                    id="edit-name"
-                                    value={editForm.data.name}
-                                    onChange={(e) =>
-                                        editForm.setData("name", e.target.value)
-                                    }
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="edit-email">Email</Label>
-                                <Input
-                                    id="edit-email"
-                                    value={editForm.data.email}
-                                    onChange={(e) =>
-                                        editForm.setData(
-                                            "email",
-                                            e.target.value
-                                        )
-                                    }
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="edit-phone">No HP</Label>
-                                <Input
-                                    id="edit-phone"
-                                    value={editForm.data.phone}
-                                    onChange={(e) =>
-                                        editForm.setData(
-                                            "phone",
-                                            e.target.value
-                                        )
-                                    }
-                                />
-                            </div>
-                            <Button
-                                type="submit"
-                                disabled={editForm.processing}
-                            >
+                            <PetugasForm
+                                provinces={provinces}
+                                value={data}
+                                onChange={setData}
+                            />
+                            <Button type="submit" disabled={processing}>
                                 Perbarui
                             </Button>
                         </form>
