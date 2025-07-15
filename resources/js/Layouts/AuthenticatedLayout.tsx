@@ -75,7 +75,7 @@ export default function Authenticated({
                                             method="post"
                                             as="button"
                                         >
-                                            Log Out
+                                            Logout
                                         </Dropdown.Link>
                                     </Dropdown.Content>
                                 </Dropdown>
@@ -159,7 +159,7 @@ export default function Authenticated({
                                 href={route("logout")}
                                 as="button"
                             >
-                                Log Out
+                                Logout
                             </ResponsiveNavLink>
                         </div>
                     </div>
