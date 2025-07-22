@@ -36,16 +36,18 @@ class UserFactory extends Factory
     public function definition(): array
     {
         // Pilih provinsi acak
-        $province = Province::inRandomOrder()->first();
+        $province = Province::with(['cities.districts.villages'])->inRandomOrder()->first();
 
         // Ambil city berdasarkan provinsi
-        $city = City::where('province_code', $province->code)->inRandomOrder()->first();
+        $city = $province->cities->random();
 
         // Ambil district berdasarkan city
-        $district = District::where('city_code', $city->code)->inRandomOrder()->first();
+        $district = $city->districts->random();
 
         // Ambil village berdasarkan district
-        $village = Village::where('district_code', $district->code)->inRandomOrder()->first();
+        $village = $district->villages->random();
+
+        // dd($village);
 
         return [
             'name' => $this->faker->name,

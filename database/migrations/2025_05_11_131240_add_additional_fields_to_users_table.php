@@ -12,18 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            Schema::table('users', function (Blueprint $table) {
-                $table->string('phone')->nullable()->after('email');
-                $table->enum('role', ['admin', 'petugas', 'customer'])->default('customer')->after('password');
+            $table->string('phone')->nullable()->after('email');
+            $table->enum('role', ['admin', 'petugas', 'customer'])->default('customer')->after('password');
 
-                // Relasi ke wilayah
-                $table->foreignId('province_id')->nullable()->constrained('provinces')->nullOnDelete();
-                $table->foreignId('city_id')->nullable()->constrained('cities')->nullOnDelete();
-                $table->foreignId('district_id')->nullable()->constrained('districts')->nullOnDelete();
-                $table->foreignId('village_id')->nullable()->constrained('villages')->nullOnDelete();
+            $table->char('province_id', 2)->nullable()->after('role');
+            $table->char('city_id', 4)->nullable()->after('province_id');
+            $table->char('district_id', 7)->nullable()->after('city_id');
+            $table->char('village_id', 10)->nullable()->after('district_id');
 
-                $table->text('address_detail')->nullable()->after('village_id');
-            });
+            // Relasi ke wilayah
+            $table->foreign('province_id')->references('code')->on('provinces')->nullOnDelete();
+            $table->foreign('city_id')->references('code')->on('cities')->nullOnDelete();
+            $table->foreign('district_id')->references('code')->on('districts')->nullOnDelete();
+            $table->foreign('village_id')->references('code')->on('villages')->nullOnDelete();
+
+            $table->text('address_detail')->nullable()->after('village_id');
         });
     }
 
