@@ -37,6 +37,7 @@ class AuthenticatedSessionController extends Controller
 
         // Redirect by role
         return match ($user->role) {
+            'super_admin' => redirect()->intended(route('super-admin.dashboard', absolute: false)),
             'admin'    => redirect()->intended(route('admin.dashboard', absolute: false)),
             'petugas'  => redirect()->intended(route('petugas.dashboard', absolute: false)),
             'customer' => redirect()->intended(route('customer.dashboard', absolute: false)),

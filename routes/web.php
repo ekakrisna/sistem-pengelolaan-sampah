@@ -38,6 +38,10 @@ Route::middleware('auth')->group(function () {
             'destroy'
         ]);
     });
+
+    Route::prefix('super_admin')->name('super_admin.')->group(function () {
+        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    });
 });
 
 

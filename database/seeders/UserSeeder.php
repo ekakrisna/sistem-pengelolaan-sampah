@@ -14,6 +14,11 @@ class UserSeeder extends Seeder
         User::truncate();
         Schema::enableForeignKeyConstraints();
 
+        User::factory()->create([
+            'name' => 'Super Admin LokaBersih',
+            'email' => 'super_admin@lokabersih.com',
+            'role' => 'super_admin',
+        ]);
         // Buat 1 admin
         User::factory()->create([
             'name' => 'Admin LokaBersih',

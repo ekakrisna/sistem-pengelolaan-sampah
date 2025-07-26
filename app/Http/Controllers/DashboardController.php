@@ -12,6 +12,7 @@ class DashboardController extends Controller
         $role = Auth::user()->role;
 
         return match ($role) {
+            'super_admin' => Inertia::render('Dashboard/SuperAdmin'),
             'admin'    => Inertia::render('Dashboard/Admin'),
             'petugas'  => Inertia::render('Dashboard/Petugas'),
             'customer' => Inertia::render('Dashboard/Customer'),

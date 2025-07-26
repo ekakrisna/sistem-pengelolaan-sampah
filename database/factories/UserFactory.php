@@ -54,7 +54,7 @@ class UserFactory extends Factory
             'email' => $this->faker->unique()->safeEmail,
             'phone' => '08' . $this->faker->numerify('##########'),
             'password' => bcrypt('password'),
-            'role' => $this->faker->randomElement(['admin', 'petugas', 'customer']),
+            'role' => $this->faker->randomElement(['admin', 'petugas', 'customer', 'super_admin']),
 
             'province_id' => $province->code,
             'city_id' => $city->code,
