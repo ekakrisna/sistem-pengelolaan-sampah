@@ -74,9 +74,6 @@ class PetugasController extends Controller
                 'password' => bcrypt('password'),
             ]);
 
-            dd($user);
-
-
             DB::commit();
 
             return Redirect::route('admin.petugas.index')

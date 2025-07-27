@@ -18,11 +18,6 @@ Route::get('/', function () {
     ]);
 });
 
-Route::prefix('api')->name('api.')->group(function () {
-    Route::get('districts/{city}', [LocationController::class, 'districts'])->name('districts');
-    Route::get('villages/{district}', [LocationController::class, 'villages'])->name('villages');
-});
-
 Route::middleware('auth')->group(function () {
     Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('profile', [ProfileController::class, 'update'])->name('profile.update');
