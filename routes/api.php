@@ -19,17 +19,6 @@ Route::prefix('{version}')
     })
     ->where(['version' => 'v[0-9]+']);
 
-Route::fallback(function () {
-    return response()->json([
-        'error' => true,
-        'details' => [
-            'name' => 'Error::RequestError::NotFound',
-            'message' => 'Endpoint not found. Please check your API version and route.',
-        ],
-        'metadata' => ['message' => null],
-    ], 404);
-});
-
 Route::apiResource('/users', App\Http\Controllers\API\UserController::class);
 
 Route::apiResource('/pickups', App\Http\Controllers\API\PickupController::class);
