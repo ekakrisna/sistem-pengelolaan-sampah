@@ -1,15 +1,34 @@
 <?php
 
 use App\Http\Controllers\Api\LocationController;
+use App\Http\Controllers\Api\V1\Auth\AuthController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
-// Route::post('/login', [AuthController::class, 'login']);
-// Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::prefix('{version}')
+    ->name('api.')
+    ->group(function () {
+        Route::post('/login', [AuthController::class, 'login'])->name('login');
+        Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum')->name('logout');
 
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::get('/profile', function () {
+                return Auth::user() ?? response()->json(['error' => 'Unauthorized'], 401);
+            })->name('profile');
+        });
+    })
+    ->where(['version' => 'v[0-9]+']);
 
+Route::fallback(function () {
+    return response()->json([
+        'error' => true,
+        'details' => [
+            'name' => 'Error::RequestError::NotFound',
+            'message' => 'Endpoint not found. Please check your API version and route.',
+        ],
+        'metadata' => ['message' => null],
+    ], 404);
+});
 
 Route::apiResource('/users', App\Http\Controllers\API\UserController::class);
 

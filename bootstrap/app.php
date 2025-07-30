@@ -19,8 +19,65 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->api(append: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            \App\Http\Middleware\EnsureValidApiVersion::class,
+        ], prepend: [
+            \App\Http\Middleware\ApiVersionMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->renderable(function (\Throwable $e, $request) {
+            if ($request->is('api/*')) {
+                if ($e instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException) {
+                    return response()->json([
+                        'error' => true,
+                        'details' => [
+                            'name' => 'Error::RequestError::MethodNotAllowed',
+                            'message' => $e->getMessage(),
+                        ],
+                        'metadata' => [
+                            'message' => null
+                        ]
+                    ], 405);
+                }
+
+                if ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+                    return response()->json([
+                        'error' => true,
+                        'details' => [
+                            'name' => 'Error::RequestError::NotFound',
+                            'message' => $e->getMessage(),
+                        ],
+                        'metadata' => [
+                            'message' => null
+                        ]
+                    ], 404);
+                }
+
+                if ($e instanceof \Illuminate\Validation\ValidationException) {
+                    return response()->json([
+                        'error' => true,
+                        'details' => [
+                            'name' => 'Error::ValidationError',
+                            'message' => $e->getMessage(),
+                            'errors' => $e->errors(),
+                        ],
+                        'metadata' => [
+                            'message' => null
+                        ]
+                    ], 422);
+                }
+
+                // Tambahan: default handler untuk error lainnya
+                return response()->json([
+                    'error' => true,
+                    'details' => [
+                        'name' => 'Error::InternalServerError',
+                        'message' => $e->getMessage(),
+                    ],
+                    'metadata' => [
+                        'message' => null
+                    ]
+                ], 500);
+            }
+        });
     })->create();

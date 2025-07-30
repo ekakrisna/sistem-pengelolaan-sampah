@@ -30,3 +30,10 @@ if (!function_exists('successResponse')) {
         ]);
     }
 }
+
+if (!function_exists('getApiVersion')) {
+    function getApiVersion(): string
+    {
+        return app('api.version') ?? 'v1';
+    }
+}
