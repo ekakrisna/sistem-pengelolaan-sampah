@@ -3,13 +3,14 @@
 use Illuminate\Http\JsonResponse;
 
 if (!function_exists('errorResponse')) {
-    function errorResponse(string $name, string $message, int $status = 400): JsonResponse
+    function errorResponse(string $name, string $message, array $errors = [], int $status = 400): JsonResponse
     {
         return response()->json([
             'error' => true,
             'details' => [
                 'name' => $name,
                 'message' => $message,
+                'errors' => [],
             ],
             'metadata' => [
                 'message' => null,
