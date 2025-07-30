@@ -33,81 +33,43 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->renderable(function (\Throwable $e, $request) {
             if ($request->is('api/*')) {
                 if ($e instanceof \Illuminate\Auth\AuthenticationException) {
-                    return response()->json([
-                        'error' => true,
-                        'details' => [
-                            'name' => 'Error::Auth::Unauthenticated',
-                            'message' => 'You are not authenticated or the token is invalid.',
-                        ],
-                        'metadata' => [
-                            'message' => null
-                        ]
-                    ], 401);
+                    return errorResponse(
+                        name: 'Error::Auth::Unauthenticated',
+                        message: 'You are not authenticated or the token is invalid.',
+                        statusCode: 401
+                    );
                 }
 
                 if ($e instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException) {
-                    return response()->json([
-                        'error' => true,
-                        'details' => [
-                            'name' => 'Error::RequestError::MethodNotAllowed',
-                            'message' => $e->getMessage(),
-                        ],
-                        'metadata' => [
-                            'message' => null
-                        ]
-                    ], 405);
+                    return errorResponse(
+                        name: 'Error::RequestError::MethodNotAllowed',
+                        message: $e->getMessage(),
+                        statusCode: 405
+                    );
                 }
 
                 if ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
-                    return response()->json([
-                        'error' => true,
-                        'details' => [
-                            'name' => 'Error::RequestError::NotFound',
-                            'message' => $e->getMessage(),
-                        ],
-                        'metadata' => [
-                            'message' => null
-                        ]
-                    ], 404);
+                    return errorResponse(
+                        name: 'Error::RequestError::NotFound',
+                        message: $e->getMessage(),
+                        statusCode: 404
+                    );
                 }
 
                 if ($e instanceof \Illuminate\Validation\ValidationException) {
-                    return response()->json([
-                        'error' => true,
-                        'details' => [
-                            'name' => 'Error::ValidationError',
-                            'message' => $e->getMessage(),
-                            'errors' => $e->errors(),
-                        ],
-                        'metadata' => [
-                            'message' => null
-                        ]
-                    ], 422);
+                    return errorResponse(
+                        name: 'Error::ValidationError',
+                        message: $e->getMessage(),
+                        errors: $e->errors(),
+                        statusCode: 422
+                    );
                 }
 
-                if ($e instanceof \ErrorException && Str::contains($e->getMessage(), 'Undefined array key')) {
-                    return response()->json([
-                        'error' => true,
-                        'details' => [
-                            'name' => 'Error::BadRequest::MissingField',
-                            'message' => 'A required field is missing from the request: ' . Str::lower($e->getMessage()),
-                        ],
-                        'metadata' => [
-                            'message' => null
-                        ]
-                    ], 400);
-                }
-
-                return response()->json([
-                    'error' => true,
-                    'details' => [
-                        'name' => 'Error::InternalServerError',
-                        'message' => $e->getMessage(),
-                    ],
-                    'metadata' => [
-                        'message' => null
-                    ]
-                ], 500);
+                return errorResponse(
+                    name: 'Error::InternalServerError',
+                    message: $e->getMessage(),
+                    statusCode: 500
+                );
             }
         });
     })->create();

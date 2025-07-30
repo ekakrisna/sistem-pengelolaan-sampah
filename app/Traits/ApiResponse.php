@@ -28,7 +28,7 @@ trait ApiResponse
                 'errors' => $errors,
             ],
             'metadata' => [
-                'message' => null,
+                'version' => getApiVersion(),
             ],
         ], $statusCode);
     }
