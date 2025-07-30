@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\Api\V1\Transaction;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TransactionRequest;

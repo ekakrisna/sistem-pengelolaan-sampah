@@ -14,12 +14,12 @@ class UserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'string|max:191',
-            'email' => 'string|max:191|unique:users,email',
+            'name' => 'required|string|max:191',
+            'email' => 'required|string|max:191|unique:users,email',
             'phone' => 'string|max:191',
             'email_verified_at' => 'date',
-            'password' => 'string|max:191',
-            'role' => 'in:admin,petugas,customer,super_admin',
+            'password' => 'required|string|max:191',
+            'role' => 'required|in:admin,petugas,customer,super_admin',
             'province_id' => 'string|max:2',
             'city_id' => 'string|max:4',
             'district_id' => 'string|max:7',

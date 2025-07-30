@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Support\Str;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,6 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->append([
+            \Illuminate\Session\Middleware\StartSession::class,
+        ]);
+
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
@@ -27,6 +32,19 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->renderable(function (\Throwable $e, $request) {
             if ($request->is('api/*')) {
+                if ($e instanceof \Illuminate\Auth\AuthenticationException) {
+                    return response()->json([
+                        'error' => true,
+                        'details' => [
+                            'name' => 'Error::Auth::Unauthenticated',
+                            'message' => 'You are not authenticated or the token is invalid.',
+                        ],
+                        'metadata' => [
+                            'message' => null
+                        ]
+                    ], 401);
+                }
+
                 if ($e instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException) {
                     return response()->json([
                         'error' => true,
@@ -67,7 +85,19 @@ return Application::configure(basePath: dirname(__DIR__))
                     ], 422);
                 }
 
-                // Tambahan: default handler untuk error lainnya
+                if ($e instanceof \ErrorException && Str::contains($e->getMessage(), 'Undefined array key')) {
+                    return response()->json([
+                        'error' => true,
+                        'details' => [
+                            'name' => 'Error::BadRequest::MissingField',
+                            'message' => 'A required field is missing from the request: ' . Str::lower($e->getMessage()),
+                        ],
+                        'metadata' => [
+                            'message' => null
+                        ]
+                    ], 400);
+                }
+
                 return response()->json([
                     'error' => true,
                     'details' => [

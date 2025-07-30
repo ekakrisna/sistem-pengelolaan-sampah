@@ -1,52 +1,53 @@
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\Api\V1\Payment;
+
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\PickupRequest;
-use App\Http\Resources\PickupResource;
-use App\Models\Pickup;
+use App\Http\Requests\PaymentRequest;
+use App\Http\Resources\PaymentResource;
+use App\Models\Payment;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class PickupController extends Controller
+class PaymentController extends Controller
 {
     public function index(): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
     {
-        return PickupResource::collection(Pickup::latest()->paginate(10));
+        return PaymentResource::collection(Payment::latest()->paginate(10));
     }
 
-    public function store(PickupRequest $request): PickupResource|\Illuminate\Http\JsonResponse
+    public function store(PaymentRequest $request): PaymentResource|\Illuminate\Http\JsonResponse
     {
         try {
-            $pickup = Pickup::create($request->validated());
-            return new PickupResource($pickup);
+            $payment = Payment::create($request->validated());
+            return new PaymentResource($payment);
         } catch (\Exception $exception) {
             report($exception);
             return response()->json(['error' => 'There is an error.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function show(Pickup $pickup): PickupResource
+    public function show(Payment $payment): PaymentResource
     {
-        return PickupResource::make($pickup);
+        return PaymentResource::make($payment);
     }
 
-    public function update(PickupRequest $request, Pickup $pickup): PickupResource|\Illuminate\Http\JsonResponse
+    public function update(PaymentRequest $request, Payment $payment): PaymentResource|\Illuminate\Http\JsonResponse
     {
         try {
-            $pickup->update($request->validated());
-            return new PickupResource($pickup);
+            $payment->update($request->validated());
+            return new PaymentResource($payment);
         } catch (\Exception $exception) {
             report($exception);
             return response()->json(['error' => 'There is an error.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function destroy(Pickup $pickup): \Illuminate\Http\JsonResponse
+    public function destroy(Payment $payment): \Illuminate\Http\JsonResponse
     {
         try {
-            $pickup->delete();
+            $payment->delete();
             return response()->json(['message' => 'Deleted successfully'], Response::HTTP_OK);
         } catch (\Exception $exception) {
             report($exception);

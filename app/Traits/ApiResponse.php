@@ -18,13 +18,14 @@ trait ApiResponse
         ]);
     }
 
-    protected function errorResponse(string $name, string $message, int $statusCode = 400): JsonResponse
+    protected function errorResponse(string $name, string $message, array $errors = [], int $statusCode = 400): JsonResponse
     {
         return response()->json([
             'error' => true,
             'details' => [
                 'name' => $name,
                 'message' => $message,
+                'errors' => $errors,
             ],
             'metadata' => [
                 'message' => null,

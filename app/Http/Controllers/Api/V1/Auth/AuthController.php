@@ -4,71 +4,88 @@ namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\UserRequest;
+use App\Models\User;
 use App\Traits\ApiResponse;
-use Illuminate\Support\Facades\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\TransientToken;
+use Throwable;
 
 class AuthController extends Controller
 {
     use ApiResponse;
 
     /**
-     * Login the user and return an access token
+     * Login and issue Sanctum token
      */
-    public function login(LoginRequest $request)
+    public function login(LoginRequest $request): JsonResponse
     {
         $request->authenticate();
 
-        // $validator = Validator::make($request->all(), [
-        //     'email'    => ['required', 'email'],
-        //     'password' => ['required'],
-        // ]);
-
-        // if ($validator->fails()) {
-        //     return $this->errorResponse(
-        //         'Error::RequestError::InvalidParameter',
-        //         $validator->errors()->first(),
-        //         422
-        //     );
-        // }
-
-        // if (!Auth::attempt($request->only('email', 'password'), $request->boolean('remember'))) {
-        //     return $this->errorResponse(
-        //         'Error::Auth::InvalidCredentials',
-        //         'Email atau password salah.',
-        //         401
-        //     );
-        // }
-
         $user = $request->user();
 
-        // Optional: delete existing tokens
         $user->tokens()->delete();
 
-        $token = $user->createToken('auth_token', ['*'], now()->addDay());
+        $token = $user->createToken(
+            name: 'auth_token',
+            abilities: ['*'],
+            expiresAt: now()->addDay()
+        );
 
         return $this->successResponse([
             'token' => $token->plainTextToken,
             'user'  => $user,
-        ], '');
+        ], 'Login successful');
     }
 
     /**
      * Logout and revoke token
      */
-    public function logout(Request $request)
+    public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()?->delete();
+        $token = $request->user()->currentAccessToken();
 
-        return $this->successResponse(null, 'Logout berhasil.');
+        // Avoid trying to delete TransientToken
+        if ($token && !($token instanceof TransientToken)) {
+            $token->delete();
+        }
+
+        return $this->successResponse(null, 'Logout successful.');
     }
 
     /**
-     * Get current authenticated user
+     * Get authenticated user
      */
-    public function me(Request $request)
+    public function me(Request $request): JsonResponse
     {
         return $this->successResponse([
             'user' => $request->user()
         ]);
+    }
+
+    /**
+     * Register a new user and return token
+     */
+    public function register(UserRequest $request)
+    {
+        $validated = $request->validated();
+
+        $validated['password'] = Hash::make($validated['password']);
+
+        $user = User::create($validated);
+
+        $token = $user->createToken(
+            name: 'auth_token',
+            abilities: ['*'],
+            expiresAt: now()->addDay()
+        );
+
+        return $this->successResponse([
+            'token' => $token->plainTextToken,
+            'user' => $user,
+        ], 'Registration successful.');
     }
 }
