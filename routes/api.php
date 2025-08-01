@@ -15,7 +15,11 @@ Route::prefix('{version}')
             Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
             Route::get('/me', [AuthController::class, 'me'])->name('me');
 
-            Route::apiResource('/users', UserController::class);
+            Route::middleware(['role:super_admin'])->group(function () {
+                Route::apiResource('/users', UserController::class);
+            });
+
+            // Route::apiResource('/users', UserController::class);
         });
     })
     ->where(['version' => 'v[0-9]+']);

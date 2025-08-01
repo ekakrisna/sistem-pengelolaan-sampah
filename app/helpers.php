@@ -1,9 +1,10 @@
 <?php
 
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 if (!function_exists('errorResponse')) {
-    function errorResponse(string $name, string $message, array $errors = [], int $statusCode = 400): JsonResponse
+    function errorResponse(string $name, string $message, array $errors = [], int $statusCode = Response::HTTP_BAD_REQUEST): JsonResponse
     {
         return response()->json([
             'error' => true,

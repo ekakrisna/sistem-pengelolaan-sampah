@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -22,6 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        $middleware->alias([
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
+        ]);
+
         $middleware->api(append: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \App\Http\Middleware\EnsureValidApiVersion::class,
@@ -36,7 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     return errorResponse(
                         name: 'Error::Auth::Unauthenticated',
                         message: 'You are not authenticated or the token is invalid.',
-                        statusCode: 401
+                        statusCode: Response::HTTP_UNAUTHORIZED
                     );
                 }
 
@@ -44,7 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     return errorResponse(
                         name: 'Error::RequestError::MethodNotAllowed',
                         message: $e->getMessage(),
-                        statusCode: 405
+                        statusCode: Response::HTTP_METHOD_NOT_ALLOWED
                     );
                 }
 
@@ -52,7 +57,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     return errorResponse(
                         name: 'Error::RequestError::NotFound',
                         message: $e->getMessage(),
-                        statusCode: 404
+                        statusCode: Response::HTTP_NOT_FOUND
                     );
                 }
 
@@ -61,14 +66,14 @@ return Application::configure(basePath: dirname(__DIR__))
                         name: 'Error::ValidationError',
                         message: $e->getMessage(),
                         errors: $e->errors(),
-                        statusCode: 422
+                        statusCode: Response::HTTP_UNPROCESSABLE_ENTITY
                     );
                 }
 
                 return errorResponse(
                     name: 'Error::InternalServerError',
                     message: $e->getMessage(),
-                    statusCode: 500
+                    statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
                 );
             }
         });

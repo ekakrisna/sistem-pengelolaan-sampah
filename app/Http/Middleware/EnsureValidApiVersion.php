@@ -21,14 +21,11 @@ class EnsureValidApiVersion
         $allowedVersions = explode(',', env('API_ALLOWED_VERSIONS', 'v1'));
 
         if (!in_array($version, $allowedVersions)) {
-            return response()->json([
-                'error' => true,
-                'details' => [
-                    'name' => 'Error::RequestError::InvalidApiVersion',
-                    'message' => "Unsupported API version: $version",
-                ],
-                'metadata' => ['message' => null],
-            ], 400);
+            return errorResponse(
+                'Error::RequestError::InvalidApiVersion',
+                "Unsupported API version: $version",
+                statusCode: Response::HTTP_BAD_REQUEST
+            );
         }
 
         return $next($request);
