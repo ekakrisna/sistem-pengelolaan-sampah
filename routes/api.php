@@ -4,8 +4,9 @@ use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\User\UserController;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpFoundation\Response;
 
-Route::prefix('{version}')
+Route::prefix(config('app.api.version'))
     ->name('api.')
     ->group(function () {
         Route::post('/login', [AuthController::class, 'login'])->name('login');
@@ -18,12 +19,16 @@ Route::prefix('{version}')
             Route::middleware(['role:super_admin'])->group(function () {
                 Route::apiResource('/users', UserController::class);
             });
-
-            // Route::apiResource('/users', UserController::class);
         });
-    })
-    ->where(['version' => 'v[0-9]+']);
+    });
 
+Route::fallback(function ($e) {
+    return errorResponse(
+        name: 'Error::RequestError::NotFound',
+        message: "The route $e could not be found.",
+        statusCode: Response::HTTP_NOT_FOUND
+    );
+});
 
 // Route::apiResource('/pickups', App\Http\Controllers\API\PickupController::class);
 

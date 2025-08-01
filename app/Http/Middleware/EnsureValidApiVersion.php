@@ -16,16 +16,17 @@ class EnsureValidApiVersion
 
     public function handle(Request $request, Closure $next): Response
     {
-        $version = $request->route('version');
-
-        $allowedVersions = explode(',', env('API_ALLOWED_VERSIONS', 'v1'));
-
-        if (!in_array($version, $allowedVersions)) {
-            return errorResponse(
-                'Error::RequestError::InvalidApiVersion',
-                "Unsupported API version: $version",
-                statusCode: Response::HTTP_BAD_REQUEST
-            );
+        $fallback = $request->route('fallbackPlaceholder');
+        $version = explode('/', $fallback)[0] ?? null;
+        if (preg_match('/^v\d+$/', $version)) {
+            $allowedVersions = explode(',', env('API_ALLOWED_VERSIONS', 'v1'));
+            if (!in_array($version, $allowedVersions)) {
+                return errorResponse(
+                    'Error::RequestError::InvalidApiVersion',
+                    "Unsupported API version: $version",
+                    statusCode: Response::HTTP_BAD_REQUEST
+                );
+            }
         }
 
         return $next($request);

@@ -30,9 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->api(append: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \App\Http\Middleware\EnsureValidApiVersion::class,
-        ], prepend: [
-            \App\Http\Middleware\ApiVersionMiddleware::class,
-        ]);
+        ], prepend: []);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->renderable(function (\Throwable $e, $request) {
@@ -69,12 +67,6 @@ return Application::configure(basePath: dirname(__DIR__))
                         statusCode: Response::HTTP_UNPROCESSABLE_ENTITY
                     );
                 }
-
-                return errorResponse(
-                    name: 'Error::InternalServerError',
-                    message: $e->getMessage(),
-                    statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
-                );
             }
         });
     })->create();

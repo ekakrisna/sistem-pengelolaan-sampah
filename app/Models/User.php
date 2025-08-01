@@ -62,15 +62,15 @@ class User extends Authenticatable
         'name',
         'email',
         'phone',
-        'email_verified_at',
         'password',
+        'email_verified_at',
         'role',
-        'remember_token',
         'province_id',
         'city_id',
         'district_id',
         'village_id',
-        'address_detail'
+        'address_detail',
+        'remember_token',
     ];
 
     /**
@@ -98,22 +98,22 @@ class User extends Authenticatable
 
     public function province(): BelongsTo
     {
-        return $this->belongsTo(Province::class);
+        return $this->belongsTo(Province::class, 'province_id', 'code');
     }
 
     public function city(): BelongsTo
     {
-        return $this->belongsTo(City::class);
+        return $this->belongsTo(City::class, 'city_id', 'code');
     }
 
     public function district(): BelongsTo
     {
-        return $this->belongsTo(District::class);
+        return $this->belongsTo(District::class, 'district_id', 'code');
     }
 
     public function village(): BelongsTo
     {
-        return $this->belongsTo(Village::class);
+        return $this->belongsTo(Village::class, 'village_id', 'code');
     }
 
     public function customerPickups(): HasMany

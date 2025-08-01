@@ -19,6 +19,7 @@ class UserSeeder extends Seeder
             'email' => 'super_admin@lokabersih.com',
             'role' => 'super_admin',
         ]);
+
         // Buat 1 admin
         User::factory()->create([
             'name' => 'Admin LokaBersih',

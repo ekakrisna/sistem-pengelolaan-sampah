@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\User;
 
+use App\Data\UserData;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
@@ -15,7 +16,7 @@ class UserCollection extends ResourceCollection
     public function toArray(Request $request): array
     {
         return [
-            'users' => UserResource::collection($this->collection),
+            'users' => UserData::collect($this->collection),
             'pagination' => [
                 'total' => $this->total(),
                 'per_page' => $this->perPage(),

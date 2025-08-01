@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Allowed API Versions
+    |--------------------------------------------------------------------------
+    |
+    | List of allowed API versions.
+    |
+    */
+    'api' => [
+        'version' => env('API_PREFIX', 'v1'),
+    ],
 ];

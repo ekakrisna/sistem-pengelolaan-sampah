@@ -7,14 +7,14 @@ use Symfony\Component\HttpFoundation\Response;
 
 trait ApiResponse
 {
-    protected function successResponse($data = null, $detail = null, $message = null): JsonResponse
+    protected function successResponse($data = null, $message = null): JsonResponse
     {
         return response()->json([
             'error' => false,
-            'details' => $detail,
             'data' => $data,
             'metadata' => [
                 'message' => $message,
+                'version' => config('app.api.version'),
             ],
         ]);
     }
@@ -29,7 +29,7 @@ trait ApiResponse
                 'errors' => $errors,
             ],
             'metadata' => [
-                'version' => getApiVersion(),
+                'version' => config('app.api.version'),
             ],
         ], $statusCode);
     }

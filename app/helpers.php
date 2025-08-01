@@ -14,30 +14,22 @@ if (!function_exists('errorResponse')) {
                 'errors' => $errors,
             ],
             'metadata' => [
-                'version' => getApiVersion(),
+                'version' => config('app.api.version'),
             ],
         ], $statusCode);
     }
 }
 
 if (!function_exists('successResponse')) {
-    function successResponse(mixed $data = null, $detail = null, ?string $message = null): JsonResponse
+    function successResponse(mixed $data = null, ?string $message = null): JsonResponse
     {
         return response()->json([
             'error' => false,
-            'details' => $detail,
             'data' => $data,
             'metadata' => [
                 'message' => $message,
-                'version' => getApiVersion(),
+                'version' => config('app.api.version'),
             ],
         ]);
-    }
-}
-
-if (!function_exists('getApiVersion')) {
-    function getApiVersion(): string
-    {
-        return app('api.version');
     }
 }
