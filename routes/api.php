@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\User\UserController;
+use App\Http\Controllers\Api\V1\WasteType\WasteTypeController;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -18,6 +19,7 @@ Route::prefix(config('app.api.version'))
 
             Route::middleware(['role:super_admin'])->group(function () {
                 Route::apiResource('/users', UserController::class);
+                Route::apiResource('/waste_types', WasteTypeController::class);
             });
         });
     });
@@ -33,8 +35,6 @@ Route::fallback(function ($e) {
 // Route::apiResource('/pickups', App\Http\Controllers\API\PickupController::class);
 
 // Route::apiResource('/pickup_schedules', App\Http\Controllers\API\PickupScheduleController::class);
-
-// Route::apiResource('/waste_types', App\Http\Controllers\API\WasteTypeController::class);
 
 // Route::apiResource('/transactions', App\Http\Controllers\API\TransactionController::class);
 

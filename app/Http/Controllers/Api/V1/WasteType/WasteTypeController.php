@@ -2,51 +2,75 @@
 
 namespace App\Http\Controllers\Api\V1\WasteType;
 
+use App\Data\WasteTypeData;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\WasteTypeRequest;
-use App\Http\Resources\WasteTypeResource;
-use App\Models\WasteType;
+use App\Http\Resources\WasteType\WasteTypeCollection;
+use Illuminate\Http\JsonResponse;
+use App\Services\WasteTypeService;
+use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class WasteTypeController extends Controller
 {
-    public function index(): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+
+    use ApiResponse;
+
+    /**
+     * @var WasteTypeService
+     */
+    protected WasteTypeService $wasteTypeService;
+
+    /**
+     * DummyModel Constructor
+     *
+     * @param WasteTypeService $wasteTypeService
+     *
+     */
+    public function __construct(WasteTypeService $wasteTypeService)
     {
-        return WasteTypeResource::collection(WasteType::latest()->paginate(10));
+        $this->wasteTypeService = $wasteTypeService;
     }
 
-    public function store(WasteTypeRequest $request): WasteTypeResource|\Illuminate\Http\JsonResponse
+    public function index(Request $request): JsonResponse
+    {
+        $filters = $request->only(['search', 'order_by']);
+        $pageSize = (int) $request->input('page_size', 10);
+        $users = $this->wasteTypeService->paginate($filters, $pageSize);
+        $data = new WasteTypeCollection(WasteTypeData::collect($users));
+
+        return $this->successResponse($data, message: 'Users retrieved successfully.');
+    }
+
+    public function store(WasteTypeData $data): WasteTypeData|\Illuminate\Http\JsonResponse
     {
         try {
-            $wasteType = WasteType::create($request->validated());
-            return new WasteTypeResource($wasteType);
+            return WasteTypeData::from($this->wasteTypeService->save($data->all()));
         } catch (\Exception $exception) {
             report($exception);
             return response()->json(['error' => 'There is an error.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function show(WasteType $wasteType): WasteTypeResource
+    public function show(int $id): WasteTypeData
     {
-        return WasteTypeResource::make($wasteType);
+        return WasteTypeData::from($this->wasteTypeService->getById($id));
     }
 
-    public function update(WasteTypeRequest $request, WasteType $wasteType): WasteTypeResource|\Illuminate\Http\JsonResponse
+    public function update(WasteTypeData $data, int $id): WasteTypeData|\Illuminate\Http\JsonResponse
     {
         try {
-            $wasteType->update($request->validated());
-            return new WasteTypeResource($wasteType);
+            return WasteTypeData::from($this->wasteTypeService->update($data->all(), $id));
         } catch (\Exception $exception) {
             report($exception);
             return response()->json(['error' => 'There is an error.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    public function destroy(WasteType $wasteType): \Illuminate\Http\JsonResponse
+    public function destroy(int $id): \Illuminate\Http\JsonResponse
     {
         try {
-            $wasteType->delete();
+            $this->wasteTypeService->deleteById($id);
             return response()->json(['message' => 'Deleted successfully'], Response::HTTP_OK);
         } catch (\Exception $exception) {
             report($exception);

@@ -67,6 +67,12 @@ return Application::configure(basePath: dirname(__DIR__))
                         statusCode: Response::HTTP_UNPROCESSABLE_ENTITY
                     );
                 }
+
+                return errorResponse(
+                    name: 'Error::InternalServerError',
+                    message: $e->getMessage(),
+                    statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
+                );
             }
         });
     })->create();
