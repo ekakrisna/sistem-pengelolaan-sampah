@@ -13,8 +13,6 @@ class PaymentFactory extends Factory
 
     public function definition(): array
     {
-        $status = $this->faker->randomElement(['pending', 'paid', 'failed']);
-
         return [
             'customer_id' => User::where('role', 'customer')->inRandomOrder()->first()->id ?? 1,
             'amount' => $this->faker->randomFloat(2, 5000, 100000),
