@@ -11,7 +11,7 @@ class UserRepository
      * @var User
      */
     protected User $user;
-
+    protected array $with = ['province', 'city', 'village'];
     /**
      * User constructor.
      *
@@ -40,7 +40,7 @@ class UserRepository
      */
     public function getById(int $id)
     {
-        return $this->user->with(['province', 'city', 'district', 'village', 'customerPickups', 'petugasPickups'])
+        return $this->user->with($this->with)
             ->findOrFail($id);
     }
 
@@ -96,7 +96,7 @@ class UserRepository
     public function paginateWithFilters(array $filters = [], int $pageSize = 10)
     {
         $query = $this->user->newQuery();
-        $query->with(['province', 'city', 'district', 'village', 'customerPickups', 'petugasPickups']);
+        $query->with($this->with);
 
         // Search
         if (!empty($filters['search'])) {

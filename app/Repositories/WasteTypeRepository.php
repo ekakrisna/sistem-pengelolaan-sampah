@@ -10,6 +10,7 @@ class WasteTypeRepository
      * @var WasteType
      */
     protected WasteType $wasteType;
+    protected array $with = ['admin'];
 
     /**
      * WasteType constructor.
@@ -28,7 +29,7 @@ class WasteTypeRepository
      */
     public function all()
     {
-        return $this->wasteType->get();
+        return $this->wasteType->with($this->with)->get();
     }
 
     /**
@@ -39,7 +40,7 @@ class WasteTypeRepository
      */
     public function getById(int $id)
     {
-        return $this->wasteType->with(['admin'])->findOrFail($id);
+        return $this->wasteType->with($this->with)->findOrFail($id);
     }
 
     /**
@@ -50,7 +51,7 @@ class WasteTypeRepository
      */
     public function save(array $data)
     {
-        return WasteType::create($data)->load(['admin']);
+        return WasteType::create($data)->load($this->with);
     }
 
     /**
@@ -63,7 +64,7 @@ class WasteTypeRepository
     {
         $wasteType = $this->wasteType->findOrFail($id);
         $wasteType->update($data);
-        return $wasteType->load(['admin']);
+        return $wasteType->load($this->with);
     }
 
     /**
@@ -82,7 +83,7 @@ class WasteTypeRepository
     public function paginateWithFilters(array $filters, int $pageSize = 10)
     {
         $query = $this->wasteType->newQuery();
-        $query->with(['admin']);
+        $query->with($this->with);
 
         // Search admin name
         if (!empty($filters['admin'])) {

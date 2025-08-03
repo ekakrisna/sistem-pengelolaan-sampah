@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Class PickupSchedule
@@ -27,19 +28,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class PickupSchedule extends Model
 {
-	use HasFactory;
+	use HasFactory, SoftDeletes;
 
 	protected $table = 'pickup_schedules';
 
 	protected $casts = [
 		'waste_type_id' => 'int',
-		'date' => 'datetime',
-		'start_pickup_time' => 'datetime:H:i',
-		'end_pickup_time' => 'datetime:H:i'
+		'admin_id' => 'int',
+		'date' => 'datetime'
 	];
 
 	protected $fillable = [
 		'waste_type_id',
+		'admin_id',
 		'date',
 		'start_pickup_time',
 		'end_pickup_time',
@@ -49,6 +50,11 @@ class PickupSchedule extends Model
 	public function wasteType(): BelongsTo
 	{
 		return $this->belongsTo(WasteType::class);
+	}
+
+	public function admin(): BelongsTo
+	{
+		return $this->belongsTo(User::class, 'admin_id');
 	}
 
 	public function pickups(): HasMany

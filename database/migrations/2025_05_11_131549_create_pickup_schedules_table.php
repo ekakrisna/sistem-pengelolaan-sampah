@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('pickup_schedules', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('waste_type_id');
+            $table->unsignedBigInteger('admin_id');
             $table->enum('day_of_week', ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']);
             $table->time('start_pickup_time');
             $table->time('end_pickup_time');
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
+            $table->foreign('admin_id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('waste_type_id')->references('id')->on('waste_types')->onDelete('cascade');
             $table->foreign('code_village_pickup')->references('code')->on('villages')->onDelete('cascade');
         });
