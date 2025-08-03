@@ -32,14 +32,10 @@ class UserData extends Data
     public ?string $password;
     #[Enum(UserEnum::class)]
     public UserEnum $role;
-    #[Max(2)]
-    public ?string $province_id;
-    #[Max(4)]
-    public ?string $city_id;
-    #[Max(7)]
-    public ?string $district_id;
-    #[Max(10)]
-    public ?string $village_id;
+    public ?int $province_id;
+    public ?int $city_id;
+    public ?int $district_id;
+    public ?int $village_id;
 
     public ?string $address_detail;
     #[Max(100)]
