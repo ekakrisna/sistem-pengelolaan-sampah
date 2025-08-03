@@ -77,10 +77,15 @@ class PickupScheduleController extends Controller
     public function update(PickupScheduleData $data, int $id): PickupScheduleData|\Illuminate\Http\JsonResponse
     {
         try {
-            return PickupScheduleData::from($this->pickupScheduleService->update($data->all(), $id));
+            $data = PickupScheduleData::from($this->pickupScheduleService->update($data->all(), $id));
+            return $this->successResponse($data, 'Pickup schedule successfully updated.');
         } catch (\Exception $exception) {
             report($exception);
-            return response()->json(['error' => 'There is an error.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->errorResponse(
+                "Error::InternalServerError",
+                $exception->getMessage(),
+                statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
     }
 
