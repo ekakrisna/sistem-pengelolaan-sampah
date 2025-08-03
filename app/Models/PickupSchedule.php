@@ -44,7 +44,7 @@ class PickupSchedule extends Model
 		'date',
 		'start_pickup_time',
 		'end_pickup_time',
-		'code_village_pickup',
+		'code_village',
 	];
 
 	public function wasteType(): BelongsTo
@@ -64,6 +64,6 @@ class PickupSchedule extends Model
 
 	public function village(): BelongsTo
 	{
-		return $this->belongsTo(Village::class, 'code_village_pickup', 'code');
+		return $this->belongsTo(Village::class, 'code_village', 'code');
 	}
 }

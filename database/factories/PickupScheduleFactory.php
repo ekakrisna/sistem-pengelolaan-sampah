@@ -20,7 +20,7 @@ class PickupScheduleFactory extends Factory
             'day_of_week' => $this->faker->randomElement(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']),
             'start_pickup_time' => $this->faker->time(),
             'end_pickup_time' => $this->faker->time(),
-            'code_village_pickup' => Village::inRandomOrder()->first()->code,
+            'code_village' => Village::inRandomOrder()->first()->code,
         ];
     }
 }

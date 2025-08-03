@@ -13,13 +13,15 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('pickup_id');
             $table->unsignedBigInteger('payment_id');
+            $table->unsignedBigInteger('pickup_id')->nullable();
+            $table->decimal('total', 10, 2);
+            $table->text('description')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('pickup_id')->references('id')->on('pickups')->onDelete('cascade');
             $table->foreign('payment_id')->references('id')->on('payments')->onDelete('cascade');
+            $table->foreign('pickup_id')->references('id')->on('pickups')->onDelete('set null');
         });
     }
 

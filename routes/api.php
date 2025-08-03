@@ -1,8 +1,8 @@
 <?php
 
-use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupController;
+use App\Http\Controllers\Api\V1\SuperAdmin\PickupFeeController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupScheduleController;
 use App\Http\Controllers\Api\V1\SuperAdmin\UserController;
 use App\Http\Controllers\Api\V1\SuperAdmin\WasteTypeController;
@@ -24,7 +24,16 @@ Route::prefix(config('app.api.version'))
                 Route::apiResource('/waste_types', WasteTypeController::class);
                 Route::apiResource('/pickup_schedules', PickupScheduleController::class);
                 Route::apiResource('/pickups', PickupController::class);
+                Route::apiResource('/pickup_fees', PickupFeeController::class);
             });
+
+            // Route::prefix('payments')->group(function () {
+            //     Route::post('/qris', [PaymentController::class, 'createQris']);
+            //     Route::post('/ovo', [PaymentController::class, 'createOvo']);
+            //     Route::post('/gopay', [PaymentController::class, 'createGopay']);
+            //     Route::post('/dana', [PaymentController::class, 'createDana']);
+            //     Route::post('/bca-va', [PaymentController::class, 'createBcaVa']);
+            // });
         });
     });
 

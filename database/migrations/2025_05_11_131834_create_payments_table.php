@@ -16,10 +16,11 @@ return new class extends Migration
             $table->unsignedBigInteger('customer_id');
             $table->decimal('amount', 10, 2); // contoh: 25000.00
             $table->enum('status', ['pending', 'paid', 'failed'])->default('pending');
-            $table->string('payment_method')->nullable();   // contoh: qris, transfer
-            $table->string('proof_image')->nullable();      // path bukti pembayaran
-
-            $table->timestamp('paid_at')->nullable();       // kapan dibayar
+            $table->string('payment_method')->nullable(); // contoh: qris, bca_va, gopay, etc
+            $table->string('external_id')->nullable(); // dari xendit
+            $table->string('invoice_url')->nullable(); // dari xendit
+            $table->json('xendit_data')->nullable(); // full payload untuk debugging jika perlu
+            $table->timestamp('paid_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

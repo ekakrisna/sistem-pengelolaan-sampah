@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Class Payment
@@ -29,32 +30,47 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  */
 class Payment extends Model
 {
-	use HasFactory;
+	use HasFactory, SoftDeletes;
 
 	protected $table = 'payments';
-
-	protected $casts = [
-		'customer_id' => 'int',
-		'amount' => 'float',
-		'paid_at' => 'datetime'
-	];
 
 	protected $fillable = [
 		'customer_id',
 		'amount',
 		'status',
 		'payment_method',
-		'proof_image',
-		'paid_at'
+		'external_id',
+		'invoice_url',
+		'xendit_data',
+		'paid_at',
 	];
 
-	public function customer(): BelongsTo
+	protected $casts = [
+		'xendit_data' => 'array',
+		'paid_at' => 'datetime',
+	];
+
+	// Relasi ke customer
+	public function customer()
 	{
 		return $this->belongsTo(User::class, 'customer_id');
 	}
 
-	public function transaction(): HasOne
+	// Relasi ke transaction
+	public function transaction()
 	{
 		return $this->hasOne(Transaction::class);
+	}
+
+	// Scope: payment yang masih belum dibayar
+	public function scopePending($query)
+	{
+		return $query->where('status', 'pending');
+	}
+
+	// Scope: payment yang berhasil
+	public function scopePaid($query)
+	{
+		return $query->where('status', 'paid');
 	}
 }

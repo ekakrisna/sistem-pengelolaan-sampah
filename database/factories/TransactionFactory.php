@@ -17,8 +17,10 @@ class TransactionFactory extends Factory
         $payment = Payment::inRandomOrder()->first();
 
         return [
-            'pickup_id' => $pickup->id ?? 1,
-            'payment_id' => $payment->id ?? 1,
+            'pickup_id' => Pickup::factory(),
+            'payment_id' => Payment::factory(),
+            'total' => $this->faker->randomFloat(2, 10000, 50000),
+            'description' => $this->faker->sentence(),
         ];
     }
 }

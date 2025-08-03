@@ -34,5 +34,8 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-
+    'xendit' => [
+        'api_key' => env('XENDIT_API_KEY'),
+        'api_url' => env('XENDIT_API_URL', "https://api.xendit.co"),
+    ],
 ];

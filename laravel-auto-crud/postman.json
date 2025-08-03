@@ -5,10 +5,10 @@
     },
     "item": [
         {
-            "name": "Pickups",
+            "name": "Pickup_fees",
             "item": [
                 {
-                    "name": "Create pickups",
+                    "name": "Create pickup_fees",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -25,7 +25,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"pickup_schedule_id\": \"value\",\n    \"customer_id\": \"value\",\n    \"petugas_id\": \"value\",\n    \"status\": \"value\",\n    \"note\": \"value\",\n    \"deleted_at\": \"value\"\n}",
+                            "raw": "{\n    \"village_code\": \"value\",\n    \"waste_type_id\": \"value\",\n    \"admin_id\": \"value\",\n    \"amount\": \"value\",\n    \"deleted_at\": \"value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -33,7 +33,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/pickups",
+                            "raw": "http:\/\/localhost:8000\/api\/pickup_fees",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -41,7 +41,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "pickups"
+                                "pickup_fees"
                             ],
                             "variable": []
                         }
@@ -49,7 +49,7 @@
                     "response": []
                 },
                 {
-                    "name": "Update pickups",
+                    "name": "Update pickup_fees",
                     "request": {
                         "method": "PATCH",
                         "header": [
@@ -66,7 +66,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"pickup_schedule_id\": \"value\",\n    \"customer_id\": \"value\",\n    \"petugas_id\": \"value\",\n    \"status\": \"value\",\n    \"note\": \"value\",\n    \"deleted_at\": \"value\"\n}",
+                            "raw": "{\n    \"village_code\": \"value\",\n    \"waste_type_id\": \"value\",\n    \"admin_id\": \"value\",\n    \"amount\": \"value\",\n    \"deleted_at\": \"value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -74,7 +74,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/pickups\/:id",
+                            "raw": "http:\/\/localhost:8000\/api\/pickup_fees\/:id",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -82,7 +82,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "pickups",
+                                "pickup_fees",
                                 ":id"
                             ],
                             "variable": [
@@ -96,7 +96,7 @@
                     "response": []
                 },
                 {
-                    "name": "Delete pickups",
+                    "name": "Delete pickup_fees",
                     "request": {
                         "method": "DELETE",
                         "header": [
@@ -121,7 +121,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/pickups\/:id",
+                            "raw": "http:\/\/localhost:8000\/api\/pickup_fees\/:id",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -129,7 +129,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "pickups",
+                                "pickup_fees",
                                 ":id"
                             ],
                             "variable": [
@@ -143,7 +143,7 @@
                     "response": []
                 },
                 {
-                    "name": "Get pickups",
+                    "name": "Get pickup_fees",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -168,7 +168,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/pickups",
+                            "raw": "http:\/\/localhost:8000\/api\/pickup_fees",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -176,7 +176,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "pickups"
+                                "pickup_fees"
                             ],
                             "variable": []
                         }
@@ -184,7 +184,7 @@
                     "response": []
                 },
                 {
-                    "name": "Get single pickups",
+                    "name": "Get single pickup_fees",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -209,7 +209,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/pickups\/:id",
+                            "raw": "http:\/\/localhost:8000\/api\/pickup_fees\/:id",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -217,7 +217,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "pickups",
+                                "pickup_fees",
                                 ":id"
                             ],
                             "variable": [

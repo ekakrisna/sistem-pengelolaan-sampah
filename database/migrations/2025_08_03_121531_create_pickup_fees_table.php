@@ -11,20 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pickup_schedules', function (Blueprint $table) {
+        Schema::create('pickup_fees', function (Blueprint $table) {
             $table->id();
+            $table->char('village_code', 10);
             $table->unsignedBigInteger('waste_type_id');
             $table->unsignedBigInteger('admin_id');
-            $table->enum('day_of_week', ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']);
-            $table->time('start_pickup_time');
-            $table->time('end_pickup_time');
-            $table->char('code_village', 10);
+            $table->decimal('amount', 10, 2);
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('admin_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('village_code')->references('code')->on('villages')->onDelete('cascade');
             $table->foreign('waste_type_id')->references('id')->on('waste_types')->onDelete('cascade');
-            $table->foreign('code_village')->references('code')->on('villages')->onDelete('cascade');
+            $table->foreign('admin_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 
@@ -33,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pickup_schedules');
+        Schema::dropIfExists('pickup_fees');
     }
 };

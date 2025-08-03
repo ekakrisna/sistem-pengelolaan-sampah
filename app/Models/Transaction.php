@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Class Transaction
@@ -24,27 +25,30 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Transaction extends Model
 {
-	use HasFactory;
+	use HasFactory, SoftDeletes;
 
 	protected $table = 'transactions';
 
-	protected $casts = [
-		'pickup_id' => 'int',
-		'payment_id' => 'int'
-	];
-
 	protected $fillable = [
+		'payment_id',
 		'pickup_id',
-		'payment_id'
+		'total',
+		'description',
 	];
 
-	public function pickup(): BelongsTo
-	{
-		return $this->belongsTo(Pickup::class);
-	}
+	protected $casts = [
+		'total' => 'decimal:2',
+	];
 
-	public function payment(): BelongsTo
+	// Relasi ke pembayaran
+	public function payment()
 	{
 		return $this->belongsTo(Payment::class);
+	}
+
+	// Relasi ke pickup (boleh null jika tidak langsung terkait)
+	public function pickup()
+	{
+		return $this->belongsTo(Pickup::class);
 	}
 }

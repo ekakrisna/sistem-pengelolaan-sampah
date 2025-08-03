@@ -31,7 +31,7 @@ class PickupScheduleData extends Data
     public string $end_pickup_time;
 
     #[Max(10), Exists('villages', 'code')]
-    public string $code_village_pickup;
+    public string $code_village;
 
     #[Exists('users', 'id')]
     public int $admin_id;
