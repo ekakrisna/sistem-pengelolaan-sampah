@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('waste_types', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('admin_id');
             $table->string('name');
             $table->text('description')->nullable();
-            $table->foreignId('admin_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('admin_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

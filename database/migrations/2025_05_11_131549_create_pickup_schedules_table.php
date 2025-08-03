@@ -13,12 +13,16 @@ return new class extends Migration
     {
         Schema::create('pickup_schedules', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('waste_type_id')->constrained('waste_types')->onDelete('cascade');
-            $table->date('date');                  // tanggal pickup
-            $table->string('time_slot');           // contoh: "08:00 - 10:00"
-            $table->string('location')->nullable(); // opsional jika perlu lokasi spesifik
+            $table->unsignedBigInteger('waste_type_id');
+            $table->enum('day_of_week', ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']);
+            $table->time('start_pickup_time');
+            $table->time('end_pickup_time');
+            $table->char('code_village_pickup', 10);
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('waste_type_id')->references('id')->on('waste_types')->onDelete('cascade');
+            $table->foreign('code_village_pickup')->references('code')->on('villages')->onDelete('cascade');
         });
     }
 

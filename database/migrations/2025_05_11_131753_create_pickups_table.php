@@ -13,16 +13,18 @@ return new class extends Migration
     {
         Schema::create('pickups', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('pickup_schedule_id');
+            $table->unsignedBigInteger('customer_id');
+            $table->unsignedBigInteger('petugas_id')->nullable();
 
-            $table->foreignId('pickup_schedule_id')->constrained('pickup_schedules')->onDelete('cascade');
-            $table->foreignId('customer_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('petugas_id')->nullable()->constrained('users')->onDelete('set null');
-
-            $table->enum('status', ['pending', 'completed', 'failed'])->default('pending');
-            $table->text('note')->nullable(); // catatan opsional (contoh: “sampah tidak tersedia”)
-
+            $table->enum('status', ['scheduled', 'completed', 'canceled'])->default('scheduled');
+            $table->text('note')->nullable();
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('pickup_schedule_id')->references('id')->on('pickup_schedules')->onDelete('cascade');
+            $table->foreign('customer_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('petugas_id')->references('id')->on('users')->onDelete('set null');
         });
     }
 

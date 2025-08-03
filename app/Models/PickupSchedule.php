@@ -33,14 +33,17 @@ class PickupSchedule extends Model
 
 	protected $casts = [
 		'waste_type_id' => 'int',
-		'date' => 'datetime'
+		'date' => 'datetime',
+		'start_pickup_time' => 'datetime:H:i',
+		'end_pickup_time' => 'datetime:H:i'
 	];
 
 	protected $fillable = [
 		'waste_type_id',
 		'date',
-		'time_slot',
-		'location'
+		'start_pickup_time',
+		'end_pickup_time',
+		'code_village_pickup',
 	];
 
 	public function wasteType(): BelongsTo
@@ -51,5 +54,10 @@ class PickupSchedule extends Model
 	public function pickups(): HasMany
 	{
 		return $this->hasMany(Pickup::class);
+	}
+
+	public function village(): BelongsTo
+	{
+		return $this->belongsTo(Village::class, 'code_village_pickup', 'code');
 	}
 }

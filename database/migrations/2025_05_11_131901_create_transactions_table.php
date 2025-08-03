@@ -13,12 +13,13 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('pickup_id')->constrained('pickups')->onDelete('cascade');
-            $table->foreignId('payment_id')->constrained('payments')->onDelete('cascade');
-
+            $table->unsignedBigInteger('pickup_id');
+            $table->unsignedBigInteger('payment_id');
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('pickup_id')->references('id')->on('pickups')->onDelete('cascade');
+            $table->foreign('payment_id')->references('id')->on('payments')->onDelete('cascade');
         });
     }
 

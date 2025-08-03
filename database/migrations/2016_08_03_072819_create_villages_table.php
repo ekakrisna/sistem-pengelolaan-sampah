@@ -14,7 +14,6 @@ class CreateVillagesTable extends Migration
     public function up()
     {
         Schema::create(config('laravolt.indonesia.table_prefix') . 'villages', function (Blueprint $table) {
-            // $table->bigIncrements('id');
             $table->char('code', 10)->unique();
             $table->char('district_code', 7);
             $table->string('name', 255);

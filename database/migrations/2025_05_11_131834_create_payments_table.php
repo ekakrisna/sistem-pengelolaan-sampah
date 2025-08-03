@@ -13,9 +13,7 @@ return new class extends Migration
     {
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('customer_id')->constrained('users')->onDelete('cascade');
-
+            $table->unsignedBigInteger('customer_id');
             $table->decimal('amount', 10, 2); // contoh: 25000.00
             $table->enum('status', ['pending', 'paid', 'failed'])->default('pending');
             $table->string('payment_method')->nullable();   // contoh: qris, transfer
@@ -24,6 +22,8 @@ return new class extends Migration
             $table->timestamp('paid_at')->nullable();       // kapan dibayar
             $table->timestamps();
             $table->softDeletes();
+
+            $table->foreign('customer_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

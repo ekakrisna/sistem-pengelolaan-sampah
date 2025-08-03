@@ -14,7 +14,6 @@ class CreateCitiesTable extends Migration
     public function up()
     {
         Schema::create(config('laravolt.indonesia.table_prefix') . 'cities', function (Blueprint $table) {
-            // $table->bigIncrements('id');
             $table->char('code', 4)->unique();
             $table->char('province_code', 2);
             $table->string('name', 255);

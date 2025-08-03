@@ -25,7 +25,7 @@ class PickupFactory extends Factory
             'customer_id' => $customer->id ?? 1,
             'petugas_id' => $petugas->id ?? null,
 
-            'status' => $this->faker->randomElement(['pending', 'completed', 'failed']),
+            'status' => $this->faker->randomElement(['scheduled', 'completed', 'canceled']),
             'note' => $this->faker->optional()->sentence,
         ];
     }
