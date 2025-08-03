@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\SuperAdmin\PickupScheduleController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TransactionController;
 use App\Http\Controllers\Api\V1\SuperAdmin\UserController;
 use App\Http\Controllers\Api\V1\SuperAdmin\WasteTypeController;
+use App\Http\Controllers\Api\V1\Xendit\PaymentController as XenditPaymentController;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -21,7 +22,7 @@ Route::prefix(config('app.api.version'))
             Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
             Route::get('/me', [AuthController::class, 'me'])->name('me');
 
-            Route::middleware(['role:super_admin'])->group(function () {
+            Route::middleware(['role:super_admin'])->prefix('super_admin')->name('super_admin.')->group(function () {
                 Route::apiResource('/users', UserController::class);
                 Route::apiResource('/waste_types', WasteTypeController::class);
                 Route::apiResource('/pickup_schedules', PickupScheduleController::class);
@@ -31,13 +32,10 @@ Route::prefix(config('app.api.version'))
                 Route::apiResource('/payments', PaymentController::class);
             });
 
-            // Route::prefix('payments')->group(function () {
-            //     Route::post('/qris', [PaymentController::class, 'createQris']);
-            //     Route::post('/ovo', [PaymentController::class, 'createOvo']);
-            //     Route::post('/gopay', [PaymentController::class, 'createGopay']);
-            //     Route::post('/dana', [PaymentController::class, 'createDana']);
-            //     Route::post('/bca-va', [PaymentController::class, 'createBcaVa']);
-            // });
+            Route::prefix('payments')->group(function () {
+                Route::post('/', [XenditPaymentController::class, 'create']);
+                Route::get('/payment-channels', [XenditPaymentController::class, 'getAvailableChannels']);
+            });
         });
     });
 
