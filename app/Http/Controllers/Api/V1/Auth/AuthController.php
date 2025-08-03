@@ -87,7 +87,7 @@ class AuthController extends Controller
 
         return $this->successResponse([
             'token' => $token->plainTextToken,
-            'user' => $user,
+            'user' => $user->load($this->with),
         ], 'Registration successful.');
     }
 }
