@@ -2,57 +2,58 @@
 
 namespace App\Http\Controllers\Api\V1\SuperAdmin;
 
-use App\Data\PickupData;
+use App\Data\PaymentData;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Pickup\PickupCollection;
-use App\Services\PickupService;
+use App\Http\Resources\Payment\PaymentCollection;
+use App\Services\PaymentService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class PickupController extends Controller
+class PaymentController extends Controller
 {
     use ApiResponse;
 
     /**
-     * @var PickupService
+     * @var PaymentService
      */
-    protected PickupService $pickupService;
+    protected PaymentService $paymentService;
 
     /**
      * DummyModel Constructor
      *
-     * @param PickupService $pickupService
+     * @param PaymentService $paymentService
      *
      */
-    public function __construct(PickupService $pickupService)
+    public function __construct(PaymentService $paymentService)
     {
-        $this->pickupService = $pickupService;
+        $this->paymentService = $paymentService;
     }
 
     public function index(Request $request): JsonResponse
     {
         $filters = $request->only([
             'order_by',
-            'village',
+            'start_date',
+            'end_date',
             'waste_type',
-            'admin',
+            'payment_method',
             'status',
             'customer',
-            'petugas'
+            'search'
         ]);
         $pageSize = (int) $request->input('page_size', 10);
-        $pickups = $this->pickupService->paginate($filters, $pageSize);
-        $data = new PickupCollection(PickupData::collect($pickups));
-        return $this->successResponse($data, message: 'Pickups retrieved successfully.');
+        $pickups = $this->paymentService->paginate($filters, $pageSize);
+        $data = new PaymentCollection(PaymentData::collect($pickups));
+        return $this->successResponse($data, message: 'Payments retrieved successfully.');
     }
 
-    public function store(PickupData $data): PickupData|JsonResponse
+    public function store(PaymentData $data): PaymentData|JsonResponse
     {
         try {
-            $data = PickupData::from($this->pickupService->save($data->all()));
-            return $this->successResponse($data, 'Pickup successfully created.');
+            $data = PaymentData::from($this->paymentService->save($data->all()));
+            return $this->successResponse($data, 'Payment successfully created.');
         } catch (\Exception $exception) {
             report($exception);
             return $this->errorResponse(
@@ -63,19 +64,19 @@ class PickupController extends Controller
         }
     }
 
-    public function show(int $id): PickupData|JsonResponse
+    public function show(int $id): PaymentData|JsonResponse
     {
-        $data = PickupData::from($this->pickupService->getById($id));
+        $data = PaymentData::from($this->paymentService->getById($id));
         return $this->successResponse(
             data: $data,
             message: 'Pickup retrieved successfully.'
         );
     }
 
-    public function update(PickupData $data, int $id): PickupData|JsonResponse
+    public function update(PaymentData $data, int $id): PaymentData|JsonResponse
     {
         try {
-            $data = PickupData::from($this->pickupService->update($data->all(), $id));
+            $data = PaymentData::from($this->paymentService->update($data->all(), $id));
             return $this->successResponse($data, 'Pickup schedule successfully updated.');
         } catch (\Exception $exception) {
             report($exception);
@@ -90,7 +91,7 @@ class PickupController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $this->pickupService->deleteById($id);
+            $this->paymentService->deleteById($id);
             return $this->successResponse(null, 'Pickup successfully deleted.');
         } catch (\Exception $exception) {
             report($exception);

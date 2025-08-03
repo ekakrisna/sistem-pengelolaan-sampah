@@ -5,10 +5,10 @@
     },
     "item": [
         {
-            "name": "Transactions",
+            "name": "Payments",
             "item": [
                 {
-                    "name": "Create transactions",
+                    "name": "Create payments",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -25,7 +25,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"payment_id\": \"value\",\n    \"pickup_id\": \"value\",\n    \"total\": \"value\",\n    \"description\": \"value\",\n    \"deleted_at\": \"value\"\n}",
+                            "raw": "{\n    \"customer_id\": \"value\",\n    \"amount\": \"value\",\n    \"status\": \"value\",\n    \"payment_method\": \"value\",\n    \"external_id\": \"value\",\n    \"invoice_url\": \"value\",\n    \"xendit_data\": \"value\",\n    \"paid_at\": \"value\",\n    \"deleted_at\": \"value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -33,7 +33,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/transactions",
+                            "raw": "http:\/\/localhost:8000\/api\/payments",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -41,7 +41,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "transactions"
+                                "payments"
                             ],
                             "variable": []
                         }
@@ -49,7 +49,7 @@
                     "response": []
                 },
                 {
-                    "name": "Update transactions",
+                    "name": "Update payments",
                     "request": {
                         "method": "PATCH",
                         "header": [
@@ -66,7 +66,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"payment_id\": \"value\",\n    \"pickup_id\": \"value\",\n    \"total\": \"value\",\n    \"description\": \"value\",\n    \"deleted_at\": \"value\"\n}",
+                            "raw": "{\n    \"customer_id\": \"value\",\n    \"amount\": \"value\",\n    \"status\": \"value\",\n    \"payment_method\": \"value\",\n    \"external_id\": \"value\",\n    \"invoice_url\": \"value\",\n    \"xendit_data\": \"value\",\n    \"paid_at\": \"value\",\n    \"deleted_at\": \"value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -74,7 +74,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/transactions\/:id",
+                            "raw": "http:\/\/localhost:8000\/api\/payments\/:id",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -82,7 +82,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "transactions",
+                                "payments",
                                 ":id"
                             ],
                             "variable": [
@@ -96,7 +96,7 @@
                     "response": []
                 },
                 {
-                    "name": "Delete transactions",
+                    "name": "Delete payments",
                     "request": {
                         "method": "DELETE",
                         "header": [
@@ -121,7 +121,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/transactions\/:id",
+                            "raw": "http:\/\/localhost:8000\/api\/payments\/:id",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -129,7 +129,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "transactions",
+                                "payments",
                                 ":id"
                             ],
                             "variable": [
@@ -143,7 +143,7 @@
                     "response": []
                 },
                 {
-                    "name": "Get transactions",
+                    "name": "Get payments",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -168,7 +168,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/transactions",
+                            "raw": "http:\/\/localhost:8000\/api\/payments",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -176,7 +176,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "transactions"
+                                "payments"
                             ],
                             "variable": []
                         }
@@ -184,7 +184,7 @@
                     "response": []
                 },
                 {
-                    "name": "Get single transactions",
+                    "name": "Get single payments",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -209,7 +209,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/transactions\/:id",
+                            "raw": "http:\/\/localhost:8000\/api\/payments\/:id",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -217,7 +217,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "transactions",
+                                "payments",
                                 ":id"
                             ],
                             "variable": [

@@ -6,7 +6,6 @@ use Carbon\Carbon;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Attributes\Validation\Max;
 
-
 class WasteTypeData extends Data
 {
     public ?int $id;

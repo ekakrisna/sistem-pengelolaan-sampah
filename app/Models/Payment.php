@@ -9,8 +9,6 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -56,10 +54,9 @@ class Payment extends Model
 		return $this->belongsTo(User::class, 'customer_id');
 	}
 
-	// Relasi ke transaction
-	public function transaction()
+	public function transactions()
 	{
-		return $this->hasOne(Transaction::class);
+		return $this->hasMany(Transaction::class);
 	}
 
 	// Scope: payment yang masih belum dibayar

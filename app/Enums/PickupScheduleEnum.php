@@ -11,5 +11,4 @@ enum PickupScheduleEnum: string
     case friday = 'friday';
     case saturday = 'saturday';
     case sunday = 'sunday';
-
 }

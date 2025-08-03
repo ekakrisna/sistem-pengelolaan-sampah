@@ -16,7 +16,7 @@ class PickupFeeCollection extends ResourceCollection
     public function toArray(Request $request): array
     {
         return [
-            'pickups' => PickupFeeData::collect($this->collection),
+            'pickup_fees' => PickupFeeData::collect($this->collection),
             'pagination' => [
                 'total' => $this->total(),
                 'per_page' => $this->perPage(),

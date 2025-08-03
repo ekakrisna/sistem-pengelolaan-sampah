@@ -26,7 +26,6 @@ class UserCollection extends ResourceCollection
                 'to' => $this->lastItem(),
             ],
         ];
-        // return parent::toArray($request);
     }
 
     public function with(Request $request): array

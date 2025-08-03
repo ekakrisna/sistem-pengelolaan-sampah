@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\SuperAdmin\PaymentController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupFeeController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupScheduleController;
@@ -27,6 +28,7 @@ Route::prefix(config('app.api.version'))
                 Route::apiResource('/pickups', PickupController::class);
                 Route::apiResource('/pickup_fees', PickupFeeController::class);
                 Route::apiResource('/transactions', TransactionController::class);
+                Route::apiResource('/payments', PaymentController::class);
             });
 
             // Route::prefix('payments')->group(function () {
