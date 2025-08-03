@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Api\V1\SuperAdmin;
 use App\Data\PickupScheduleData;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PickupSchedule\PickupScheduleCollection;
-use App\Models\PickupSchedule;
 use App\Services\PickupScheduleService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
