@@ -18,6 +18,8 @@ class AuthController extends Controller
 {
     use ApiResponse;
 
+    protected array $with = ['province', 'district', 'city', 'village'];
+
     /**
      * Login and issue Sanctum token
      */
@@ -37,7 +39,7 @@ class AuthController extends Controller
 
         return $this->successResponse([
             'token' => $token->plainTextToken,
-            'user'  => $user,
+            'user'  => $user->load($this->with),
         ], 'Login successful');
     }
 

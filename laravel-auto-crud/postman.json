@@ -5,10 +5,10 @@
     },
     "item": [
         {
-            "name": "Pickup_fees",
+            "name": "Transactions",
             "item": [
                 {
-                    "name": "Create pickup_fees",
+                    "name": "Create transactions",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -25,7 +25,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"village_code\": \"value\",\n    \"waste_type_id\": \"value\",\n    \"admin_id\": \"value\",\n    \"amount\": \"value\",\n    \"deleted_at\": \"value\"\n}",
+                            "raw": "{\n    \"payment_id\": \"value\",\n    \"pickup_id\": \"value\",\n    \"total\": \"value\",\n    \"description\": \"value\",\n    \"deleted_at\": \"value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -33,7 +33,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/pickup_fees",
+                            "raw": "http:\/\/localhost:8000\/api\/transactions",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -41,7 +41,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "pickup_fees"
+                                "transactions"
                             ],
                             "variable": []
                         }
@@ -49,7 +49,7 @@
                     "response": []
                 },
                 {
-                    "name": "Update pickup_fees",
+                    "name": "Update transactions",
                     "request": {
                         "method": "PATCH",
                         "header": [
@@ -66,7 +66,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"village_code\": \"value\",\n    \"waste_type_id\": \"value\",\n    \"admin_id\": \"value\",\n    \"amount\": \"value\",\n    \"deleted_at\": \"value\"\n}",
+                            "raw": "{\n    \"payment_id\": \"value\",\n    \"pickup_id\": \"value\",\n    \"total\": \"value\",\n    \"description\": \"value\",\n    \"deleted_at\": \"value\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -74,7 +74,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/pickup_fees\/:id",
+                            "raw": "http:\/\/localhost:8000\/api\/transactions\/:id",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -82,7 +82,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "pickup_fees",
+                                "transactions",
                                 ":id"
                             ],
                             "variable": [
@@ -96,7 +96,7 @@
                     "response": []
                 },
                 {
-                    "name": "Delete pickup_fees",
+                    "name": "Delete transactions",
                     "request": {
                         "method": "DELETE",
                         "header": [
@@ -121,7 +121,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/pickup_fees\/:id",
+                            "raw": "http:\/\/localhost:8000\/api\/transactions\/:id",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -129,7 +129,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "pickup_fees",
+                                "transactions",
                                 ":id"
                             ],
                             "variable": [
@@ -143,7 +143,7 @@
                     "response": []
                 },
                 {
-                    "name": "Get pickup_fees",
+                    "name": "Get transactions",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -168,7 +168,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/pickup_fees",
+                            "raw": "http:\/\/localhost:8000\/api\/transactions",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -176,7 +176,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "pickup_fees"
+                                "transactions"
                             ],
                             "variable": []
                         }
@@ -184,7 +184,7 @@
                     "response": []
                 },
                 {
-                    "name": "Get single pickup_fees",
+                    "name": "Get single transactions",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -209,7 +209,7 @@
                             }
                         },
                         "url": {
-                            "raw": "http:\/\/localhost:8000\/api\/pickup_fees\/:id",
+                            "raw": "http:\/\/localhost:8000\/api\/transactions\/:id",
                             "protocol": "http",
                             "host": [
                                 "localhost"
@@ -217,7 +217,7 @@
                             "port": 8000,
                             "path": [
                                 "api",
-                                "pickup_fees",
+                                "transactions",
                                 ":id"
                             ],
                             "variable": [

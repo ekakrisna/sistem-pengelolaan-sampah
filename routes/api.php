@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupFeeController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupScheduleController;
+use App\Http\Controllers\Api\V1\SuperAdmin\TransactionController;
 use App\Http\Controllers\Api\V1\SuperAdmin\UserController;
 use App\Http\Controllers\Api\V1\SuperAdmin\WasteTypeController;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,7 @@ Route::prefix(config('app.api.version'))
                 Route::apiResource('/pickup_schedules', PickupScheduleController::class);
                 Route::apiResource('/pickups', PickupController::class);
                 Route::apiResource('/pickup_fees', PickupFeeController::class);
+                Route::apiResource('/transactions', TransactionController::class);
             });
 
             // Route::prefix('payments')->group(function () {

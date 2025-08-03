@@ -52,7 +52,7 @@ class UserRepository
      */
     public function save(array $data)
     {
-        return User::create($data);
+        return User::create($data)->load($this->with);
     }
 
     /**
@@ -72,7 +72,7 @@ class UserRepository
         }
 
         $user->update($filtered);
-        return $user;
+        return $user->load($this->with);
     }
 
     /**
