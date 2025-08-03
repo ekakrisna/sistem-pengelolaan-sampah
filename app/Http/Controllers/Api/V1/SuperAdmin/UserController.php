@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\User;
+namespace App\Http\Controllers\Api\V1\SuperAdmin;
 
 use App\Data\UserData;
 use App\Http\Controllers\Controller;
@@ -67,8 +67,6 @@ class UserController extends Controller
     public function update(UserData $data, int $id): UserData|JsonResponse
     {
         try {
-            logger('Updating user', ['id' => $id, 'data' => $data->all()]);
-
             $data = UserData::from($this->userService->update($data->all(), $id));
             return $this->successResponse($data, 'User successfully updated.');
         } catch (\Exception $exception) {

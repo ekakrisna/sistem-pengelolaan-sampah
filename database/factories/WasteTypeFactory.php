@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use App\Models\WasteType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -14,6 +15,7 @@ class WasteTypeFactory extends Factory
         return [
             'name' => $this->faker->unique()->word,
             'description' => $this->faker->sentence,
+            'admin_id' => User::where('role', 'admin')->inRandomOrder()->first()->id
         ];
     }
 }

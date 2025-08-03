@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Class WasteType
@@ -24,14 +25,25 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class WasteType extends Model
 {
-	use HasFactory;
+	use HasFactory, SoftDeletes;
 
 	protected $table = 'waste_types';
+	protected $primaryKey = 'id';
+
+	protected $casts = [
+		'admin_id' => 'int'
+	];
 
 	protected $fillable = [
 		'name',
-		'description'
+		'description',
+		'admin_id'
 	];
+
+	public function admin()
+	{
+		return $this->belongsTo(User::class, 'admin_id');
+	}
 
 	public function pickupSchedules(): HasMany
 	{

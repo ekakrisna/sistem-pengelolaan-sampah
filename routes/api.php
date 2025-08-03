@@ -2,8 +2,8 @@
 
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
-use App\Http\Controllers\Api\V1\User\UserController;
-use App\Http\Controllers\Api\V1\WasteType\WasteTypeController;
+use App\Http\Controllers\Api\V1\SuperAdmin\UserController;
+use App\Http\Controllers\Api\V1\SuperAdmin\WasteTypeController;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\Response;
 

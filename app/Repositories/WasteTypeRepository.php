@@ -39,7 +39,7 @@ class WasteTypeRepository
      */
     public function getById(int $id)
     {
-        return $this->wasteType->find($id);
+        return $this->wasteType->with(['admin'])->findOrFail($id);
     }
 
     /**
@@ -50,7 +50,7 @@ class WasteTypeRepository
      */
     public function save(array $data)
     {
-        return WasteType::create($data);
+        return WasteType::create($data)->load(['admin']);
     }
 
     /**
@@ -61,9 +61,9 @@ class WasteTypeRepository
      */
     public function update(array $data, int $id)
     {
-        $wasteType = $this->wasteType->find($id);
+        $wasteType = $this->wasteType->findOrFail($id);
         $wasteType->update($data);
-        return $wasteType;
+        return $wasteType->load(['admin']);
     }
 
     /**
@@ -74,7 +74,7 @@ class WasteTypeRepository
      */
     public function delete(int $id)
     {
-        $wasteType = $this->wasteType->find($id);
+        $wasteType = $this->wasteType->findOrFail($id);
         $wasteType->delete();
         return $wasteType;
     }
@@ -82,6 +82,17 @@ class WasteTypeRepository
     public function paginateWithFilters(array $filters, int $pageSize = 10)
     {
         $query = $this->wasteType->newQuery();
+        $query->with(['admin']);
+
+        // Search admin name
+        if (!empty($filters['admin'])) {
+            $query->whereHas('admin', function ($q) use ($filters) {
+                $q->where('name', 'like', "%{$filters['admin']}%")
+                    ->orWhere('email', 'like', "%{$filters['admin']}%")
+                    ->orWhere('phone', 'like', "%{$filters['admin']}%");
+            });
+        }
+
         // Search
         if (!empty($filters['search'])) {
             $search = $filters['search'];

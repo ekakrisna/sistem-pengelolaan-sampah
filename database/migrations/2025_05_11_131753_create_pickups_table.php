@@ -22,6 +22,7 @@ return new class extends Migration
             $table->text('note')->nullable(); // catatan opsional (contoh: “sampah tidak tersedia”)
 
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

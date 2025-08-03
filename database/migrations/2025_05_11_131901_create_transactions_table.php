@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('payment_id')->constrained('payments')->onDelete('cascade');
 
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use App\Models\WasteType;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
@@ -17,6 +18,7 @@ class WasteTypeSeeder extends Seeder
         WasteType::truncate();
         Schema::enableForeignKeyConstraints();
 
+        $admin = User::where('role', 'admin')->inRandomOrder()->first();
         $types = [
             ['Organik', 'Sampah mudah terurai seperti sisa makanan dan daun.'],
             ['Anorganik', 'Sampah sulit terurai seperti plastik, botol, dan kaleng.'],
@@ -29,7 +31,10 @@ class WasteTypeSeeder extends Seeder
                 'name' => $name,
             ], [
                 'description' => $desc,
+                'admin_id' => $admin->id
             ]);
         }
+
+        WasteType::factory(20)->create();
     }
 }

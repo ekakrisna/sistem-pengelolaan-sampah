@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('time_slot');           // contoh: "08:00 - 10:00"
             $table->string('location')->nullable(); // opsional jika perlu lokasi spesifik
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

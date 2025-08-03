@@ -23,6 +23,7 @@ return new class extends Migration
 
             $table->timestamp('paid_at')->nullable();       // kapan dibayar
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

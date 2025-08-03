@@ -68,6 +68,22 @@ return Application::configure(basePath: dirname(__DIR__))
                     );
                 }
 
+                if ($e instanceof \TypeError) {
+                    if (Str::contains($e->getMessage(), 'must be of type int')) {
+                        return errorResponse(
+                            name: 'Error::InvalidParameterType',
+                            message: 'The provided ID must be a valid integer.',
+                            statusCode: Response::HTTP_UNPROCESSABLE_ENTITY
+                        );
+                    }
+
+                    return errorResponse(
+                        name: 'Error::TypeError',
+                        message: $e->getMessage(),
+                        statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
+                    );
+                }
+
                 return errorResponse(
                     name: 'Error::InternalServerError',
                     message: $e->getMessage(),
