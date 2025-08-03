@@ -41,7 +41,7 @@ class WasteTypeController extends Controller
         return $this->successResponse($data, message: 'Waste types retrieved successfully.');
     }
 
-    public function store(WasteTypeData $data): WasteTypeData|\Illuminate\Http\JsonResponse
+    public function store(WasteTypeData $data): WasteTypeData|JsonResponse
     {
         try {
             $wasteType = WasteTypeData::from($this->wasteTypeService->save($data->all()));
@@ -66,7 +66,7 @@ class WasteTypeController extends Controller
         );
     }
 
-    public function update(WasteTypeData $data, int $id): WasteTypeData|\Illuminate\Http\JsonResponse
+    public function update(WasteTypeData $data, int $id): WasteTypeData|JsonResponse
     {
         try {
             $data = WasteTypeData::from($this->wasteTypeService->update($data->all(), $id));
@@ -81,7 +81,7 @@ class WasteTypeController extends Controller
         }
     }
 
-    public function destroy(int $id): \Illuminate\Http\JsonResponse
+    public function destroy(int $id): JsonResponse
     {
         try {
             $this->wasteTypeService->deleteById($id);

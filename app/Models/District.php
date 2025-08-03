@@ -28,6 +28,12 @@ class District extends Model
 {
 	protected $table = 'districts';
 
+	protected $casts = [
+		'code' => 'int',
+		'city_code' => 'int',
+		'meta' => 'json'
+	];
+
 	protected $fillable = [
 		'code',
 		'city_code',

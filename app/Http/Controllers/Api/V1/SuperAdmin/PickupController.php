@@ -2,58 +2,57 @@
 
 namespace App\Http\Controllers\Api\V1\SuperAdmin;
 
-use App\Data\PickupScheduleData;
+use App\Data\PickupData;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\PickupSchedule\PickupScheduleCollection;
-use App\Services\PickupScheduleService;
+use App\Http\Resources\Pickup\PickupCollection;
+use App\Services\PickupService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class PickupScheduleController extends Controller
+class PickupController extends Controller
 {
     use ApiResponse;
 
     /**
-     * @var PickupScheduleService
+     * @var PickupService
      */
-    protected PickupScheduleService $pickupScheduleService;
+    protected PickupService $pickupService;
 
     /**
      * DummyModel Constructor
      *
-     * @param PickupScheduleService $pickupScheduleService
+     * @param PickupService $pickupService
      *
      */
-    public function __construct(PickupScheduleService $pickupScheduleService)
+    public function __construct(PickupService $pickupService)
     {
-        $this->pickupScheduleService = $pickupScheduleService;
+        $this->pickupService = $pickupService;
     }
 
     public function index(Request $request): JsonResponse
     {
         $filters = $request->only([
-            'search',
             'order_by',
             'village',
             'waste_type',
-            'start_pickup_time',
-            'end_pickup_time',
-            'day_of_week',
-            'admin'
+            'admin',
+            'status',
+            'customer',
+            'petugas'
         ]);
         $pageSize = (int) $request->input('page_size', 10);
-        $pickupScheduleService = $this->pickupScheduleService->paginate($filters, $pageSize);
-        $data = new PickupScheduleCollection(PickupScheduleData::collect($pickupScheduleService));
-        return $this->successResponse($data, message: 'Pickup schedule retrieved successfully.');
+        $pickups = $this->pickupService->paginate($filters, $pageSize);
+        $data = new PickupCollection(PickupData::collect($pickups));
+        return $this->successResponse($data, message: 'Pickups retrieved successfully.');
     }
 
-    public function store(PickupScheduleData $data): PickupScheduleData|JsonResponse
+    public function store(PickupData $data): PickupData|JsonResponse
     {
         try {
-            $data = PickupScheduleData::from($this->pickupScheduleService->save($data->all()));
-            return $this->successResponse($data, 'Pickup schedule successfully created.');
+            $data = PickupData::from($this->pickupService->save($data->all()));
+            return $this->successResponse($data, 'Pickup successfully created.');
         } catch (\Exception $exception) {
             report($exception);
             return $this->errorResponse(
@@ -64,19 +63,19 @@ class PickupScheduleController extends Controller
         }
     }
 
-    public function show(int $id): PickupScheduleData|JsonResponse
+    public function show(int $id): PickupData|JsonResponse
     {
-        $user = PickupScheduleData::from($this->pickupScheduleService->getById($id));
+        $user = PickupData::from($this->pickupService->getById($id));
         return $this->successResponse(
             data: $user,
-            message: 'Pickup schedule retrieved successfully.'
+            message: 'Pickup retrieved successfully.'
         );
     }
 
-    public function update(PickupScheduleData $data, int $id): PickupScheduleData|JsonResponse
+    public function update(PickupData $data, int $id): PickupData|JsonResponse
     {
         try {
-            $data = PickupScheduleData::from($this->pickupScheduleService->update($data->all(), $id));
+            $data = PickupData::from($this->pickupService->update($data->all(), $id));
             return $this->successResponse($data, 'Pickup schedule successfully updated.');
         } catch (\Exception $exception) {
             report($exception);
@@ -91,8 +90,8 @@ class PickupScheduleController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $this->pickupScheduleService->deleteById($id);
-            return $this->successResponse(null, 'Pickup schedule successfully deleted.');
+            $this->pickupService->deleteById($id);
+            return $this->successResponse(null, 'Pickup successfully deleted.');
         } catch (\Exception $exception) {
             report($exception);
             return $this->errorResponse(

@@ -28,6 +28,12 @@ class City extends Model
 {
 	protected $table = 'cities';
 
+	protected $casts = [
+		'code' => 'int',
+		'province_code' => 'int',
+		'meta' => 'json'
+	];
+
 	protected $fillable = [
 		'code',
 		'province_code',

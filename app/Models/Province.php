@@ -26,6 +26,11 @@ class Province extends Model
 {
 	protected $table = 'provinces';
 
+	protected $casts = [
+		'code' => 'int',
+		'meta' => 'json'
+	];
+
 	protected $fillable = [
 		'code',
 		'name',

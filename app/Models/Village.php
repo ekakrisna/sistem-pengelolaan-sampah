@@ -28,6 +28,12 @@ class Village extends Model
 {
 	protected $table = 'villages';
 
+	protected $casts = [
+		'code' => 'int',
+		'district_code' => 'int',
+		'meta' => 'json'
+	];
+
 	protected $fillable = [
 		'code',
 		'district_code',

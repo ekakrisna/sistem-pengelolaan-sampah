@@ -11,7 +11,7 @@ class UserRepository
      * @var User
      */
     protected User $user;
-    protected array $with = ['province', 'city', 'village'];
+    protected array $with = ['province', 'district', 'city', 'village'];
     /**
      * User constructor.
      *

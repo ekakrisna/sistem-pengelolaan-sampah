@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\LocationController;
 use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\SuperAdmin\PickupController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupScheduleController;
 use App\Http\Controllers\Api\V1\SuperAdmin\UserController;
 use App\Http\Controllers\Api\V1\SuperAdmin\WasteTypeController;
@@ -22,6 +23,7 @@ Route::prefix(config('app.api.version'))
                 Route::apiResource('/users', UserController::class);
                 Route::apiResource('/waste_types', WasteTypeController::class);
                 Route::apiResource('/pickup_schedules', PickupScheduleController::class);
+                Route::apiResource('/pickups', PickupController::class);
             });
         });
     });
