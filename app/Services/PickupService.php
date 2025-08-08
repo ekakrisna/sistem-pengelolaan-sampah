@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Data\UserData;
 use App\Models\Pickup;
 use App\Repositories\PickupRepository;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class PickupService
 {
@@ -30,9 +33,9 @@ class PickupService
      *
      * @return String
      */
-    public function getAll()
+    public function getAll(?UserData $user)
     {
-        return $this->pickupRepository->all();
+        return $this->pickupRepository->all($user);
     }
 
     /**
@@ -41,9 +44,9 @@ class PickupService
      * @param $id
      * @return String
      */
-    public function getById(int $id)
+    public function getById(int $id, ?UserData $user = null)
     {
-        return $this->pickupRepository->getById($id);
+        return $this->pickupRepository->getById($id, $user);
     }
 
     /**
@@ -51,11 +54,12 @@ class PickupService
      * Store to DB if there are no errors.
      *
      * @param array $data
+     * @param UserData $user
      * @return String
      */
-    public function save(array $data)
+    public function save(array $data, ?UserData $user = null)
     {
-        return $this->pickupRepository->save($data);
+        return $this->pickupRepository->save($data, $user);
     }
 
     /**
@@ -63,19 +67,24 @@ class PickupService
      * Store to DB if there are no errors.
      *
      * @param array $data
+     * @param $id
+     * @param UserData $user
      * @return String
      */
-    public function update(array $data, int $id)
+    public function update(array $data, int $id, ?UserData $user = null)
     {
         DB::beginTransaction();
         try {
-            $pickupRepository = $this->pickupRepository->update($data, $id);
+            $pickupRepository = $this->pickupRepository->update($data, $id, $user);
             DB::commit();
             return $pickupRepository;
+        } catch (ModelNotFoundException $e) {
+            DB::rollBack();
+            throw new NotFoundHttpException($e->getMessage(), $e);
         } catch (Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException('Unable to update post data');
+            throw new InvalidArgumentException($e->getMessage());
         }
     }
 
@@ -83,29 +92,31 @@ class PickupService
      * Delete pickupRepository by id.
      *
      * @param $id
+     * @param UserData $user
      * @return String
      */
-    public function deleteById(int $id)
+    public function deleteById(int $id, ?UserData $user = null)
     {
         DB::beginTransaction();
         try {
-            $pickupRepository = $this->pickupRepository->delete($id);
+            $pickupRepository = $this->pickupRepository->delete($id, $user);
             DB::commit();
             return $pickupRepository;
         } catch (Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException('Unable to delete post data');
+            throw new InvalidArgumentException($e->getMessage());
         }
     }
 
     /**
      * @param array $filters
      * @param int $pageSize
+     * @param UserData|null $user
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
-    public function paginate(array $filters, int $pageSize = 10)
+    public function paginate(array $filters, int $pageSize = 10, ?UserData $user = null)
     {
-        return $this->pickupRepository->paginateWithFilters($filters, $pageSize);
+        return $this->pickupRepository->paginateWithFilters($filters, $pageSize, $user);
     }
 }

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('customer_id');
             $table->decimal('amount', 10, 2); // contoh: 25000.00
-            $table->enum('status', ['pending', 'paid', 'failed'])->default('pending');
+            $table->enum('status', ['pending', 'settling', 'paid', 'failed'])->default('pending');
             $table->string('payment_method')->nullable(); // contoh: qris, bca_va, gopay, etc
             $table->string('external_id')->nullable(); // dari xendit
             $table->string('invoice_url')->nullable(); // dari xendit

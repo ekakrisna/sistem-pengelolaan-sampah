@@ -26,7 +26,8 @@ class PickupFeeFactory extends Factory
             'village_code' => Village::inRandomOrder()->first()->code,
             'waste_type_id' => WasteType::inRandomOrder()->first()->id,
             'admin_id' => User::inRandomOrder()->first()->id,
-            'amount' => $this->faker->randomFloat(2, 5000, 50000), // Rp 5.000 - Rp 50.000
+            'amount' => $this->faker->numberBetween(1, 5) * 10000, // Rounded to the nearest 10,000, between Rp 5.000.000 and Rp 50.000.000
+            'description' => $this->faker->sentence(),
         ];
     }
 }

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('waste_type_id');
             $table->unsignedBigInteger('admin_id');
             $table->decimal('amount', 10, 2);
+            $table->string('description')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

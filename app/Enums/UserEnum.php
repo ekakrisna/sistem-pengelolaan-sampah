@@ -4,8 +4,8 @@ namespace App\Enums;
 
 enum UserEnum: string
 {
-    case admin = 'admin';
-    case petugas = 'petugas';
-    case customer = 'customer';
-    case super_admin = 'super_admin';
+    case Admin = 'admin';
+    case Petugas = 'petugas';
+    case Customer = 'customer';
+    case SuperAdmin = 'super_admin';
 }

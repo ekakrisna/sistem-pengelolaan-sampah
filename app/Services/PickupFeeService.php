@@ -75,7 +75,7 @@ class PickupFeeService
         } catch (Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException('Unable to update post data');
+            throw new InvalidArgumentException($e->getMessage());
         }
     }
 
@@ -95,7 +95,7 @@ class PickupFeeService
         } catch (Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException('Unable to delete post data');
+            throw new InvalidArgumentException($e->getMessage());
         }
     }
 

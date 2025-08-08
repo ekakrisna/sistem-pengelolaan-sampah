@@ -51,4 +51,9 @@ class Transaction extends Model
 	{
 		return $this->belongsTo(Pickup::class);
 	}
+
+	public function items()
+	{
+		return $this->hasMany(TransactionItem::class);
+	}
 }

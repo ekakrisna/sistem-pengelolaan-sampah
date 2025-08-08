@@ -2,102 +2,168 @@
 
 namespace App\Repositories;
 
+use App\Data\UserData;
+use App\Enums\PickupEnum;
+use App\Enums\UserEnum;
 use App\Models\Pickup;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class PickupRepository
 {
-    /**
-     * @var Pickup
-     */
     protected Pickup $pickup;
-    protected $with = [
+
+    /** @var array<string> */
+    protected array $with = [
         'schedule.village',
         'schedule.wasteType',
         'schedule.admin',
         'customer',
         'petugas',
-        'transaction'
+        'transaction',
     ];
 
-    /**
-     * Pickup constructor.
-     *
-     * @param Pickup $pickup
-     */
     public function __construct(Pickup $pickup)
     {
         $this->pickup = $pickup;
     }
 
-    /**
-     * Get all pickup.
-     *
-     * @return Pickup $pickup
-     */
-    public function all()
+    protected function isAdmin(?UserData $user): bool
     {
-        return $this->pickup->with($this->with)->get();
+        $role = $user?->role?->value ?? $user?->role?->name ?? null;
+        return in_array($role, [UserEnum::Admin->value, UserEnum::SuperAdmin->value], true);
     }
 
     /**
-     * Get pickup by id
-     *
-     * @param $id
-     * @return mixed
+     * Helper: apply role-based scope to a query.
+     * - admin  : no restriction
+     * - customer: restrict by customer_id
+     * - petugas : restrict by petugas_id
      */
-    public function getById(int $id)
+    protected function scopeForUser(?UserData $user, ?Builder $query = null): Builder
     {
-        return $this->pickup->with($this->with)->findOrFail($id);
+        $query = ($query ?? $this->pickup->newQuery());
+
+        if (!$user) {
+            // Tidak ada user => block akses kecuali kamu memang ingin public.
+            // Boleh diganti abort(403) atau biarkan tanpa filter sesuai kebutuhan.
+            return $query; // <-- kalau ingin block non-logged-in, ubah ke: abort(403);
+        }
+
+        $role = $user->role->value ?? $user->role->name ?? null;
+
+        return match ($role) {
+            'customer' => $query->where('customer_id', $user->id),
+            'petugas'  => $query->where('petugas_id', $user->id),
+            // admin atau role lain bebas akses; tambahkan case lain bila perlu
+            default    => $query,
+        };
+    }
+
+    /**
+     * List all (admin only realistically). Tambahkan parameter user jika perlu role filtering.
+     */
+    public function all(?UserData $user = null)
+    {
+        return $this->scopeForUser($user, $this->pickup->newQuery())
+            ->with($this->with)
+            ->get();
+    }
+
+    /**
+     * Get pickup by id (role-aware).
+     */
+    public function getById(int $id, ?UserData $user = null)
+    {
+        return $this->scopeForUser($user, $this->pickup->newQuery())
+            ->with($this->with)
+            ->whereKey($id)
+            ->firstOrFail();
     }
 
     /**
      * Save Pickup
-     *
-     * @param $data
-     * @return Pickup
      */
-    public function save(array $data)
+    public function save(array $data, ?UserData $user = null): Pickup
     {
-        return Pickup::create($data)->load($this->with);
-    }
+        if ($this->isAdmin($user)) {
+            if (empty($data['customer_id'])) {
+                throw new \InvalidArgumentException('customer_id is required for admin.');
+            }
+        } else {
+            unset($data['customer_id'], $data['petugas_id']);
 
-    /**
-     * Update Pickup
-     *
-     * @param $data
-     * @return Pickup
-     */
-    public function update(array $data, int $id)
-    {
-        $pickup = $this->pickup->findOrFail($id);
-        $pickup->update($data);
+            if ($user?->role?->value === UserEnum::Customer->value) {
+                $data['customer_id'] = $user->id;
+            } elseif ($user?->role?->value === UserEnum::Petugas->value) {
+                $data['petugas_id'] = $user->id;
+            } else {
+                abort(403, 'Unauthorized');
+            }
+        }
+
+        $pickup = $this->pickup->newQuery()->create($data);
+
         return $pickup->load($this->with);
     }
 
+
     /**
-     * Delete Pickup
-     *
-     * @param $data
-     * @return Pickup
+     * Update Pickup (role-aware).
      */
-    public function delete(int $id)
+    public function update(array $data, int $id, ?UserData $user = null): Pickup
     {
-        $pickup = $this->pickup->findOrFail($id);
+        $pickup = $this->scopeForUser($user, $this->pickup->newQuery())
+            ->whereKey($id)
+            ->firstOrFail();
+
+        if ($user) {
+            unset($data['customer_id'], $data['petugas_id']);
+            if ($user->role->value === UserEnum::Customer->value) {
+                $data['customer_id'] = $user->id;
+            } elseif ($user->role->value === UserEnum::Petugas->value) {
+                $data['petugas_id'] = $user->id;
+            }
+        }
+
+        if (array_key_exists('status', $data)) {
+            if ($data['status'] instanceof PickupEnum) {
+            } elseif (is_string($data['status'])) {
+                $enum = PickupEnum::tryFrom($data['status']);
+                if ($enum) {
+                    $data['status'] = $enum;
+                }
+            }
+        }
+
+        $pickup->fill($data)->save();
+
+        return $pickup->fresh()->load($this->with);
+    }
+
+    /**
+     * Delete Pickup (role-aware).
+     */
+    public function delete(int $id, ?UserData $user = null): Pickup
+    {
+        $pickup = $this->scopeForUser($user, $this->pickup->newQuery())
+            ->whereKey($id)
+            ->firstOrFail();
+
         $pickup->delete();
+
         return $pickup;
     }
 
     /**
-     * @param array $filters
-     * @param int $pageSize
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     * Pagination + Filters (role-aware).
      */
-    public function paginateWithFilters(array $filters = [], int $pageSize = 10)
+    public function paginateWithFilters(array $filters = [], int $pageSize = 10, ?UserData $user = null)
     {
-        $query = $this->pickup->newQuery();
-        $query->with($this->with);
+        $query = $this->scopeForUser($user, $this->pickup->newQuery())
+            ->with($this->with);
 
-        // Search by village (through schedule.village)
+        // Search by village
         if (!empty($filters['village'])) {
             $query->whereHas('schedule.village', function ($q) use ($filters) {
                 $q->where('name', 'like', '%' . $filters['village'] . '%');
@@ -106,41 +172,53 @@ class PickupRepository
 
         // Search by waste type
         if (!empty($filters['waste_type'])) {
-            $query->whereHas('schedule.wasteType', function ($q) use ($filters) {
-                $q->where('name', 'like', '%' . $filters['waste_type'] . '%')
-                    ->orWhere('description', 'like', '%' . $filters['waste_type'] . '%');
+            $qf = '%' . $filters['waste_type'] . '%';
+            $query->whereHas('schedule.wasteType', function ($q) use ($qf) {
+                $q->where('name', 'like', $qf)
+                    ->orWhere('description', 'like', $qf);
             });
         }
 
-        // Filter by admin
+        // Filter by admin (relasi schedule.admin)
         if (!empty($filters['admin'])) {
-            $query->whereHas('schedule.admin', function ($q) use ($filters) {
-                $q->where('name', 'like', '%' . $filters['admin'] . '%')
-                    ->orWhere('email', 'like', '%' . $filters['admin'] . '%')
-                    ->orWhere('phone', 'like', '%' . $filters['admin'] . '%');
+            $qf = '%' . $filters['admin'] . '%';
+            $query->whereHas('schedule.admin', function ($q) use ($qf) {
+                $q->where('name', 'like', $qf)
+                    ->orWhere('email', 'like', $qf)
+                    ->orWhere('phone', 'like', $qf);
             });
         }
 
-        // Filter by status
+        // Filter by status (support enum cast)
         if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+            $status = $filters['status'];
+            if ($status instanceof PickupEnum) {
+                $query->where('status', $status);
+            } elseif (is_string($status)) {
+                $enum = PickupEnum::tryFrom($status);
+                $query->where('status', $enum ? $enum : $status);
+            } else {
+                $query->where('status', $status);
+            }
         }
 
         // Filter by customer
         if (!empty($filters['customer'])) {
-            $query->whereHas('customer', function ($q) use ($filters) {
-                $q->where('name', 'like', '%' . $filters['customer'] . '%')
-                    ->orWhere('email', 'like', '%' . $filters['customer'] . '%')
-                    ->orWhere('phone', 'like', '%' . $filters['customer'] . '%');
+            $qf = '%' . $filters['customer'] . '%';
+            $query->whereHas('customer', function ($q) use ($qf) {
+                $q->where('name', 'like', $qf)
+                    ->orWhere('email', 'like', $qf)
+                    ->orWhere('phone', 'like', $qf);
             });
         }
 
         // Filter by petugas
         if (!empty($filters['petugas'])) {
-            $query->whereHas('petugas', function ($q) use ($filters) {
-                $q->where('name', 'like', '%' . $filters['petugas'] . '%')
-                    ->orWhere('email', 'like', '%' . $filters['petugas'] . '%')
-                    ->orWhere('phone', 'like', '%' . $filters['petugas'] . '%');
+            $qf = '%' . $filters['petugas'] . '%';
+            $query->whereHas('petugas', function ($q) use ($qf) {
+                $q->where('name', 'like', $qf)
+                    ->orWhere('email', 'like', $qf)
+                    ->orWhere('phone', 'like', $qf);
             });
         }
 
