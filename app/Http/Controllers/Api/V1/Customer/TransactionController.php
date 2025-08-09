@@ -35,7 +35,7 @@ class TransactionController extends Controller
         $this->user = UserData::from($request->user());
     }
 
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
         $filters = $request->only([
             'order_by',
