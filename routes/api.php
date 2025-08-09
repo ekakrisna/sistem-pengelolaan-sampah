@@ -24,10 +24,6 @@ Route::prefix(config('app.api.version'))
         Route::post('/login', [AuthController::class, 'login'])->name('login');
         Route::post('/register', [AuthController::class, 'register'])->name('register');
 
-        Route::prefix('payments')->group(function () {
-            Route::post('/callback', [WebhookController::class, 'handle']);
-        });
-
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
             Route::get('/me', [AuthController::class, 'me'])->name('me');
@@ -40,11 +36,6 @@ Route::prefix(config('app.api.version'))
                 Route::apiResource('/pickup_fees', PickupFeeController::class);
                 Route::apiResource('/transactions', TransactionController::class);
                 Route::apiResource('/payments', PaymentController::class);
-            });
-
-            Route::prefix('payments')->group(function () {
-                Route::post('/', [XenditPaymentController::class, 'create']);
-                Route::get('/channels', [XenditPaymentController::class, 'channels']);
             });
 
             Route::middleware(['role:customer,super_admin'])->prefix('customer')->name('customer.')->group(function () {
@@ -69,9 +60,11 @@ Route::prefix(config('app.api.version'))
                 // Payments
                 Route::get('payment-channels', [CustomerPaymentController::class, 'channels']);
                 Route::prefix('payments')->name('payments.')->group(function () {
-                    Route::get('/', [CustomerPaymentController::class, 'index']);
-                    Route::get('{id}', [CustomerPaymentController::class, 'show']);
-                    Route::post('/', [CustomerPaymentController::class, 'create']);
+                    Route::prefix('request')->group(function () {
+                        Route::post('/', [CustomerPaymentController::class, 'create']);
+                        Route::get('/{prId}', [CustomerPaymentController::class, 'show']);
+                        Route::get('/{prId}/captures', [CustomerPaymentController::class, 'captures']);
+                    });
                 });
 
                 // Transactions
@@ -90,14 +83,3 @@ Route::fallback(function ($e) {
         statusCode: Response::HTTP_NOT_FOUND
     );
 });
-
-// Route::apiResource('/pickups', App\Http\Controllers\API\PickupController::class);
-
-// Route::apiResource('/pickup_schedules', App\Http\Controllers\API\PickupScheduleController::class);
-
-// Route::apiResource('/transactions', App\Http\Controllers\API\TransactionController::class);
-
-// Route::apiResource('/payments', App\Http\Controllers\API\PaymentController::class);
-
-// Route::get('districts/{city}', [LocationController::class, 'districts'])->name('districts');
-// Route::get('villages/{district}', [LocationController::class, 'villages'])->name('villages');
