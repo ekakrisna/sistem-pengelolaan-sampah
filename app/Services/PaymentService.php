@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\UserData;
 use App\Models\Payment;
 use App\Repositories\PaymentRepository;
 use Exception;
@@ -30,9 +31,9 @@ class PaymentService
      *
      * @return String
      */
-    public function getAll()
+    public function getAll(?UserData $user = null)
     {
-        return $this->paymentRepository->all();
+        return $this->paymentRepository->all($user, $user);
     }
 
     /**
@@ -41,9 +42,9 @@ class PaymentService
      * @param $id
      * @return String
      */
-    public function getById(int $id)
+    public function getById(int $id, ?UserData $user = null)
     {
-        return $this->paymentRepository->getById($id);
+        return $this->paymentRepository->getById($id, $user);
     }
 
     /**
@@ -53,9 +54,9 @@ class PaymentService
      * @param array $data
      * @return String
      */
-    public function save(array $data)
+    public function save(array $data, ?UserData $user = null)
     {
-        return $this->paymentRepository->save($data);
+        return $this->paymentRepository->save($data, $user);
     }
 
     /**
@@ -65,11 +66,11 @@ class PaymentService
      * @param array $data
      * @return String
      */
-    public function update(array $data, int $id)
+    public function update(array $data, int $id, ?UserData $user = null)
     {
         DB::beginTransaction();
         try {
-            $paymentRepository = $this->paymentRepository->update($data, $id);
+            $paymentRepository = $this->paymentRepository->update($data, $id, $user);
             DB::commit();
             return $paymentRepository;
         } catch (Exception $e) {
@@ -85,11 +86,11 @@ class PaymentService
      * @param $id
      * @return String
      */
-    public function deleteById(int $id)
+    public function deleteById(int $id, ?UserData $user = null)
     {
         DB::beginTransaction();
         try {
-            $paymentRepository = $this->paymentRepository->delete($id);
+            $paymentRepository = $this->paymentRepository->delete($id, $user);
             DB::commit();
             return $paymentRepository;
         } catch (Exception $e) {
@@ -104,8 +105,8 @@ class PaymentService
      * @param int $pageSize
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
-    public function paginate(array $filters, int $pageSize = 10)
+    public function paginate(array $filters, int $pageSize = 10, ?UserData $user = null)
     {
-        return $this->paymentRepository->paginateWithFilters($filters, $pageSize);
+        return $this->paymentRepository->paginateWithFilters($filters, $pageSize, $user);
     }
 }

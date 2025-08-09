@@ -7,7 +7,6 @@ use App\Enums\PickupEnum;
 use App\Enums\UserEnum;
 use App\Models\Pickup;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class PickupRepository
 {

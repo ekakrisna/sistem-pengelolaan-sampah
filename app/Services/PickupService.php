@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Data\UserData;
-use App\Models\Pickup;
 use App\Repositories\PickupRepository;
 use Exception;
 use Illuminate\Database\Eloquent\ModelNotFoundException;

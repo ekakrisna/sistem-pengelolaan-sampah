@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\UserData;
 use App\Models\Transaction;
 use App\Repositories\TransactionRepository;
 use Exception;
@@ -40,10 +41,11 @@ class TransactionService
      *
      * @param $id
      * @return String
+     * @return String
      */
-    public function getById(int $id)
+    public function getById(int $id, ?UserData $user = null)
     {
-        return $this->transactionRepository->getById($id);
+        return $this->transactionRepository->getById($id, $user);
     }
 
     /**
@@ -51,11 +53,12 @@ class TransactionService
      * Store to DB if there are no errors.
      *
      * @param array $data
+     * @param ?UserData $user
      * @return String
      */
-    public function save(array $data)
+    public function save(array $data, ?UserData $user = null)
     {
-        return $this->transactionRepository->save($data);
+        return $this->transactionRepository->save($data, $user);
     }
 
     /**
@@ -63,13 +66,15 @@ class TransactionService
      * Store to DB if there are no errors.
      *
      * @param array $data
+     * @param $id
+     * @param ?UserData $user
      * @return String
      */
-    public function update(array $data, int $id)
+    public function update(array $data, int $id, ?UserData $user = null)
     {
         DB::beginTransaction();
         try {
-            $transactionRepository = $this->transactionRepository->update($data, $id);
+            $transactionRepository = $this->transactionRepository->update($data, $id, $user);
             DB::commit();
             return $transactionRepository;
         } catch (Exception $e) {
@@ -83,13 +88,14 @@ class TransactionService
      * Delete transactionRepository by id.
      *
      * @param $id
+     * @param ?UserData $user
      * @return String
      */
-    public function deleteById(int $id)
+    public function deleteById(int $id, ?UserData $user = null)
     {
         DB::beginTransaction();
         try {
-            $transactionRepository = $this->transactionRepository->delete($id);
+            $transactionRepository = $this->transactionRepository->delete($id, $user);
             DB::commit();
             return $transactionRepository;
         } catch (Exception $e) {
@@ -102,10 +108,11 @@ class TransactionService
     /**
      * @param array $filters
      * @param int $pageSize
+     * @param ?UserData $user
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
-    public function paginate(array $filters, int $pageSize = 10)
+    public function paginate(array $filters, int $pageSize = 10, ?UserData $user = null)
     {
-        return $this->transactionRepository->paginateWithFilters($filters, $pageSize);
+        return $this->transactionRepository->paginateWithFilters($filters, $pageSize, $user);
     }
 }

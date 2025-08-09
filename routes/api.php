@@ -76,7 +76,7 @@ Route::prefix(config('app.api.version'))
 
                 // Transactions
                 Route::prefix('transactions')->name('transactions.')->group(function () {
-                    Route::get('', [CustomerTransactionController::class, 'index']);
+                    Route::get('/', [CustomerTransactionController::class, 'index']);
                     Route::get('{id}', [CustomerTransactionController::class, 'show']);
                 });
             });

@@ -2,7 +2,9 @@
 
 namespace App\Repositories;
 
+use App\Data\UserData;
 use App\Models\Payment;
+use Illuminate\Database\Eloquent\Builder;
 
 class PaymentRepository
 {
@@ -23,14 +25,46 @@ class PaymentRepository
     }
 
     /**
+     * Scope query berdasarkan role user:
+     * - super_admin/admin : full access
+     * - customer          : payment miliknya (customer_id = $user->id)
+     * - petugas           : payment yang terkait pickup di transaction dimana pickup.petugas_id = $user->id
+     */
+    protected function scopeForUser(?UserData $user, ?Builder $query = null): Builder
+    {
+        $query ??= $this->payment->newQuery();
+
+        if (!$user) {
+            return $query; // biarkan bebas; kalau mau, bisa diubah ke abort(403).
+        }
+
+        $role = $user->role->value ?? $user->role->name ?? (string) $user->role ?? null;
+        $role = strtolower((string) $role);
+
+        return match ($role) {
+            'customer' => $query->where('customer_id', $user->id),
+
+            'petugas'  => $query->whereHas('transaction.pickup', function (Builder $q) use ($user) {
+                $q->where('petugas_id', $user->id);
+            }),
+
+            // admin/super_admin (atau role lain) tanpa restriksi
+            default    => $query,
+        };
+    }
+
+    /**
      * Get all payment.
      *
      * @return Payment $payment
      */
-    public function all()
+    public function all(?UserData $user = null)
     {
-        return $this->payment->with($this->with)->get();
+        return $this->scopeForUser($user)
+            ->with($this->with)
+            ->get();
     }
+
 
     /**
      * Get payment by id
@@ -38,9 +72,12 @@ class PaymentRepository
      * @param $id
      * @return mixed
      */
-    public function getById(int $id)
+    public function getById(int $id, ?UserData $user = null)
     {
-        return $this->payment->with($this->with)->findOrFail($id);
+        return $this->scopeForUser($user)
+            ->with($this->with)
+            ->whereKey($id)
+            ->firstOrFail();
     }
 
     /**
@@ -60,9 +97,9 @@ class PaymentRepository
      * @param $data
      * @return Payment
      */
-    public function update(array $data, int $id)
+    public function update(array $data, int $id, ?UserData $user = null)
     {
-        $payment = $this->payment->findOrFail($id);
+        $payment = $this->scopeForUser($user)->findOrFail($id);
         $payment->update($data);
         return $payment->load($this->with);
     }
@@ -73,9 +110,9 @@ class PaymentRepository
      * @param $data
      * @return Payment
      */
-    public function delete(int $id)
+    public function delete(int $id, ?UserData $user = null)
     {
-        $payment = $this->payment->findOrFail($id);
+        $payment = $this->scopeForUser($user)->findOrFail($id);
         $payment->delete();
         return $payment;
     }
@@ -85,10 +122,9 @@ class PaymentRepository
      * @param int $pageSize
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
-    public function paginateWithFilters(array $filters = [], int $pageSize = 10)
+    public function paginateWithFilters(array $filters = [], int $pageSize = 10, ?UserData $user = null)
     {
-        $query = $this->payment->newQuery();
-        $query->with($this->with);
+        $query = $this->scopeForUser($user)->with($this->with);
 
         // Filter by search 
         if (!empty($filters['search'])) {
