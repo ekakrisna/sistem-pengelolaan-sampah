@@ -12,6 +12,8 @@ class PaymentRepository
      * @var Payment
      */
     protected Payment $payment;
+
+    /** @var array<string> */
     protected array $with = ['customer', 'transactions'];
 
     /**

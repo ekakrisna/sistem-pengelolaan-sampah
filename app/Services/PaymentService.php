@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Data\UserData;
-use App\Models\Payment;
 use App\Repositories\PaymentRepository;
 use Exception;
 use Illuminate\Support\Facades\DB;
