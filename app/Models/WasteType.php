@@ -29,6 +29,7 @@ class WasteType extends Model
 
 	protected $table = 'waste_types';
 	protected $primaryKey = 'id';
+	public $timestamps = true;
 
 	protected $casts = [
 		'admin_id' => 'int'
@@ -37,7 +38,10 @@ class WasteType extends Model
 	protected $fillable = [
 		'name',
 		'description',
-		'admin_id'
+		'admin_id',
+		'deleted_at',
+		'created_at',
+		'updated_at',
 	];
 
 	public function admin()

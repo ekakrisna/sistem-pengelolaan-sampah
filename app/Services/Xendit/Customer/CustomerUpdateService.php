@@ -60,13 +60,7 @@ class CustomerUpdateService
             $res = $this->api->updateCustomer($customerId, $forUserId, $req);
             return $this->toArray($res);
         } catch (XenditSdkException $e) {
-            $full = $this->toArray($e->getFullError());
-            $status = (int)($full['status'] ?? 0);
-
-            throw new \RuntimeException(
-                "Xendit updateCustomer failed: {$e->getMessage()} | " . json_encode($full),
-                $status > 0 ? $status : 0
-            );
+            throw new \RuntimeException("Xendit updateCustomer failed: {$e->getMessage()}");
         }
     }
 

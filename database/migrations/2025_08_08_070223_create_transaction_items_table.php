@@ -24,6 +24,7 @@ return new class extends Migration
             $table->json('meta')->nullable();
 
             $table->timestamps();
+            $table->softDeletes();
 
             $table->foreign('transaction_id')
                 ->references('id')->on('transactions')->onDelete('cascade');

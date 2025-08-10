@@ -55,7 +55,8 @@ class PickupFeeRepository
      */
     public function save(array $data)
     {
-        return PickupFee::create($data)->load($this->with);
+        $pickupFee = $this->pickupFee->newQuery()->create($data);
+        return $pickupFee->load($this->with);
     }
 
     /**

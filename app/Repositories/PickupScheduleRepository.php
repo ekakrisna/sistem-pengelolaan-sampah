@@ -51,7 +51,8 @@ class PickupScheduleRepository
      */
     public function save(array $data)
     {
-        return PickupSchedule::create($data)->load($this->with);
+        $pickupSchedule = $this->pickupSchedule->newQuery()->create($data);
+        return $pickupSchedule->load($this->with);
     }
 
     /**

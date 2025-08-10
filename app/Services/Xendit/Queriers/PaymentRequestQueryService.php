@@ -22,7 +22,7 @@ class PaymentRequestQueryService extends BaseXenditPaymentService
             $result = $this->api->getPaymentRequestByID($paymentRequestId, $forUserId);
             return json_decode(json_encode($result), true);
         } catch (XenditSdkException $e) {
-            throw new \RuntimeException("Xendit PaymentRequest failed: {$e->getMessage()}");
+            throw new \RuntimeException("Xendit payment request failed: {$e->getMessage()}");
         }
     }
 }

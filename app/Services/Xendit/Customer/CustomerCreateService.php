@@ -67,13 +67,7 @@ class CustomerCreateService
             // Normalize ke array supaya aman di consumer
             return $this->toArray($res);
         } catch (XenditSdkException $e) {
-            $full = $this->toArray($e->getFullError());
-            $status = (int)($full['status'] ?? 0);
-
-            throw new \RuntimeException(
-                "Xendit createCustomer failed: {$e->getMessage()} | " . json_encode($full),
-                $status > 0 ? $status : 0
-            );
+            throw new \RuntimeException("Xendit create customer failed: {$e->getMessage()}");
         }
     }
 

@@ -11,12 +11,16 @@ class PickupFee extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'pickup_fees';
+    public $timestamps = true;
 
     protected $fillable = [
         'village_code',
         'waste_type_id',
         'admin_id',
         'amount',
+        'deleted_at',
+        'created_at',
+        'updated_at',
     ];
 
     protected $casts = [

@@ -4,6 +4,7 @@ namespace App\Services\Xendit\Methods;
 
 use Carbon\CarbonInterface;
 use App\Services\Xendit\Methods\BaseXenditPaymentService;
+use Carbon\Carbon;
 
 class VirtualAccountFixedSingleUseService extends BaseXenditPaymentService
 {
@@ -24,7 +25,7 @@ class VirtualAccountFixedSingleUseService extends BaseXenditPaymentService
         int $amount,
         string $bankCode,
         string $customerName,
-        CarbonInterface $expiresAtUtc,
+        ?\DateTimeInterface $expiresAt = null,
         ?string $vaReferenceId = null,
         ?array $metadata = null,
         ?string $idempotencyKey = null,
@@ -32,6 +33,13 @@ class VirtualAccountFixedSingleUseService extends BaseXenditPaymentService
         ?string $withSplitRuleId = null
     ): array {
         $referenceId = $this->ensureReferenceId($referenceId, 'VA');
+
+        // default expiry: +N jam dari config, kirim dalam UTC ISO8601
+        $hours = (int) config('services.xendit.expiry_hours', 24);
+
+        $expiry = $expiresAt
+            ? Carbon::instance(\DateTime::createFromInterface($expiresAt))->utc()
+            : now('UTC')->addHours($hours);
 
         $payload = [
             'reference_id' => $referenceId,
@@ -46,7 +54,7 @@ class VirtualAccountFixedSingleUseService extends BaseXenditPaymentService
                     'channel_code' => strtoupper($bankCode),
                     'channel_properties' => [
                         'customer_name' => $customerName,
-                        'expires_at' => $expiresAtUtc->toIso8601String(), // contoh: 2025-08-10T03:00:00Z
+                        'expires_at' => $expiry->toIso8601String(), // contoh: 2025-08-10T03:00:00Z
                     ],
                 ],
             ],

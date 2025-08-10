@@ -31,6 +31,7 @@ class PickupSchedule extends Model
 	use HasFactory, SoftDeletes;
 
 	protected $table = 'pickup_schedules';
+	public $timestamps = true;
 
 	protected $casts = [
 		'waste_type_id' => 'int',
@@ -45,6 +46,9 @@ class PickupSchedule extends Model
 		'start_pickup_time',
 		'end_pickup_time',
 		'code_village',
+		'deleted_at',
+		'created_at',
+		'updated_at',
 	];
 
 	public function wasteType(): BelongsTo

@@ -33,6 +33,8 @@ class Pickup extends Model
 
 	protected $table = 'pickups';
 
+	public $timestamps = true;
+
 	protected $casts = [
 		'pickup_schedule_id' => 'int',
 		'customer_id' => 'int',
@@ -44,7 +46,10 @@ class Pickup extends Model
 		'customer_id',
 		'petugas_id',
 		'status',
-		'note'
+		'note',
+		'deleted_at',
+		'created_at',
+		'updated_at',
 	];
 
 	public function schedule(): BelongsTo

@@ -52,9 +52,7 @@ class BaseXenditPaymentService
             $result = $this->api->createPaymentRequest($idempotencyKey, $forUserId, $withSplitRuleId, $params);
             return json_decode(json_encode($result), true);
         } catch (XenditSdkException $e) {
-            throw new \RuntimeException(
-                "Xendit PaymentRequest failed: {$e->getMessage()} | " . json_encode($e->getFullError())
-            );
+            throw new \RuntimeException("Xendit payment request failed: {$e->getMessage()}");
         }
     }
 

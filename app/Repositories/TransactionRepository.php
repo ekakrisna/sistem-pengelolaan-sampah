@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Data\UserData;
 use App\Models\Transaction;
+use App\Models\TransactionItem;
 use Illuminate\Database\Eloquent\Builder;
 
 class TransactionRepository
@@ -89,7 +90,8 @@ class TransactionRepository
      */
     public function save(array $data)
     {
-        return Transaction::create($data)->load($this->with);
+        $transaction = $this->transaction->newQuery()->create($data);
+        return $transaction->load($this->with);
     }
 
     /**
@@ -137,7 +139,7 @@ class TransactionRepository
      * - village          : pickup.schedule.village.name
      * - waste_type       : pickup.schedule.wasteType (name/description)
      * - admin            : pickup.schedule.admin (name/email)
-     * - start_date/end_date : by transactions.created_at
+     * - start_date/end_date : by transaction.created_at
      * - order_by         : oldest|desc (default desc)
      */
     public function paginateWithFilters(array $filters = [], int $pageSize = 10, ?UserData $user = null)
@@ -195,5 +197,13 @@ class TransactionRepository
         $query->orderBy('created_at', $sort === 'oldest' ? 'asc' : 'desc');
 
         return $query->paginate($pageSize);
+    }
+
+    public function insertItems(int $transactionId, array $rows): void
+    {
+        foreach ($rows as $r) {
+            $r['transaction_id'] = $transactionId;
+            TransactionItem::create($r);
+        }
     }
 }

@@ -51,7 +51,8 @@ class WasteTypeRepository
      */
     public function save(array $data)
     {
-        return WasteType::create($data)->load($this->with);
+        $wasteType = $this->wasteType->newQuery()->create($data);
+        return $wasteType->load($this->with);
     }
 
     /**

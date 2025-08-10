@@ -52,7 +52,8 @@ class UserRepository
      */
     public function save(array $data)
     {
-        return User::create($data)->load($this->with);
+        $user = $this->user->newQuery()->create($data);
+        return $user->load($this->with);
     }
 
     /**

@@ -1,36 +1,17 @@
 <?php
 
-/**
- * Created by Reliese Model.
- */
-
 namespace App\Models;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * Class Payment
- * 
- * @property int $id
- * @property int $customer_id
- * @property float $amount
- * @property string $status
- * @property string|null $payment_method
- * @property string|null $proof_image
- * @property Carbon|null $paid_at
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- *
- * @package App\Models
- */
 class Payment extends Model
 {
 	use HasFactory, SoftDeletes;
 
 	protected $table = 'payments';
+	public $timestamps = true;
 
 	protected $fillable = [
 		'customer_id',
@@ -41,31 +22,37 @@ class Payment extends Model
 		'invoice_url',
 		'xendit_data',
 		'paid_at',
+		'deleted_at',
+		'created_at',
+		'updated_at',
 	];
 
 	protected $casts = [
 		'xendit_data' => 'array',
 		'paid_at' => 'datetime',
+		'amount' => 'decimal:2',
 	];
 
-	// Relasi ke customer
 	public function customer()
 	{
 		return $this->belongsTo(User::class, 'customer_id');
 	}
 
-	public function transactions()
+	// public function transactions()
+	// {
+	// 	return $this->hasMany(Transaction::class);
+	// }
+
+	public function transaction()
 	{
-		return $this->hasMany(Transaction::class);
+		return $this->hasOne(Transaction::class);
 	}
 
-	// Scope: payment yang masih belum dibayar
 	public function scopePending($query)
 	{
 		return $query->where('status', 'pending');
 	}
 
-	// Scope: payment yang berhasil
 	public function scopePaid($query)
 	{
 		return $query->where('status', 'paid');

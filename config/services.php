@@ -41,5 +41,6 @@ return [
         'callback_token' => env('XENDIT_CALLBACK_TOKEN'),
         'currency' => env('XENDIT_DEFAULT_CURRENCY', 'IDR'),
         'country' => env('XENDIT_DEFAULT_COUNTRY', 'ID'),
+        'expiry_hours' => env('XENDIT_EXPIRY_HOURS', 24),
     ],
 ];

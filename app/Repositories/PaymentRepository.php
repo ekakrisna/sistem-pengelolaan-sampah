@@ -14,7 +14,7 @@ class PaymentRepository
     protected Payment $payment;
 
     /** @var array<string> */
-    protected array $with = ['customer', 'transactions.items'];
+    protected array $with = ['customer', 'transaction.items'];
 
     /**
      * Payment constructor.
@@ -90,7 +90,8 @@ class PaymentRepository
      */
     public function save(array $data)
     {
-        return Payment::create($data)->load($this->with);
+        $payment = $this->payment->newQuery()->create($data);
+        return $payment->load($this->with);
     }
 
     /**

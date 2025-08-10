@@ -40,6 +40,9 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
+    protected $table = 'users';
+    public $timestamps = true;
+
     /**
      * The attributes that should be cast.
      *
@@ -71,6 +74,9 @@ class User extends Authenticatable
         'village_id',
         'address_detail',
         'remember_token',
+        'deleted_at',
+        'created_at',
+        'updated_at',
     ];
 
     /**

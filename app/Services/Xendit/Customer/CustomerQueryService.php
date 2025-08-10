@@ -35,12 +35,7 @@ class CustomerQueryService
             $res = $this->api->getCustomer($customerId, $forUserId);
             return $this->toArray($res);
         } catch (XenditSdkException $e) {
-            $full = $this->toArray($e->getFullError());
-            $status = (int)($full['status'] ?? 0);
-            throw new \RuntimeException(
-                "Xendit getCustomer failed: {$e->getMessage()} | " . json_encode($full),
-                $status > 0 ? $status : 0
-            );
+            throw new \RuntimeException("Xendit get customer failed: {$e->getMessage()}");
         }
     }
 
@@ -60,12 +55,7 @@ class CustomerQueryService
 
             return $this->toArray($res);
         } catch (XenditSdkException $e) {
-            $full = $this->toArray($e->getFullError());
-            $status = (int)($full['status'] ?? 0);
-            throw new \RuntimeException(
-                "Xendit list Customers by reference_id failed: {$e->getMessage()} | " . json_encode($full),
-                $status > 0 ? $status : 0
-            );
+            throw new \RuntimeException("Xendit list customers by reference_id failed: {$e->getMessage()}");
         }
     }
 

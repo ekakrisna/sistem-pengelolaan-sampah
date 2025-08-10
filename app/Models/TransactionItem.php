@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TransactionItem extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
+
+    protected $table = 'transaction_items';
+    public $timestamps = true;
 
     protected $fillable = [
         'transaction_id',
@@ -17,6 +21,9 @@ class TransactionItem extends Model
         'qty',
         'line_total',
         'meta',
+        'deleted_at',
+        'created_at',
+        'updated_at',
     ];
 
     protected $casts = [

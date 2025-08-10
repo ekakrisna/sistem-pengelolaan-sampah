@@ -8,11 +8,12 @@ use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Attributes\Validation\Numeric;
 use Spatie\LaravelData\Attributes\Validation\Date;
 use Carbon\Carbon;
-
+use Spatie\LaravelData\Attributes\DataCollectionOf;
+use Spatie\LaravelData\DataCollection;
 
 class TransactionData extends Data
 {
-
+    public ?int $id;
     public int $payment_id;
 
     public ?int $pickup_id;
@@ -28,4 +29,6 @@ class TransactionData extends Data
 
     public ?Payment $payment;
     public ?Pickup $pickup;
+    #[DataCollectionOf(TransactionItemData::class)]
+    public ?DataCollection $items;
 }

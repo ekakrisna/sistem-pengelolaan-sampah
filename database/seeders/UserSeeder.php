@@ -34,13 +34,18 @@ class UserSeeder extends Seeder
         ]);
 
         // Buat 3 petugas
-        User::factory(3)->create([
+        User::factory()->create([
+            'name' => 'Petugas 1 LokaBersih',
             'role' => 'petugas',
+            'email' => 'petugas@lokabersih.com',
+
         ]);
 
         // Buat 20 customer
-        User::factory(20)->create([
+        User::factory()->create([
+            'name' => 'Customer 1 LokaBersih',
             'role' => 'customer',
+            'email' => 'customer@lokabersih.com',
         ]);
     }
 }

@@ -10,13 +10,12 @@ use App\Models\User;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Date;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
 use Spatie\LaravelData\Attributes\WithCast;
 use Spatie\LaravelData\Casts\DateTimeInterfaceCast;
 
 class PaymentData extends Data
 {
-
+    public ?int $id;
     public int $customer_id;
     #[Numeric]
     public int $amount;
@@ -39,5 +38,6 @@ class PaymentData extends Data
     public ?Carbon $deleted_at;
 
     public ?User $customer;
-    public ?Collection $transactions;
+    // #[DataCollectionOf(TransactionData::class)]
+    public ?TransactionData $transaction;
 }
