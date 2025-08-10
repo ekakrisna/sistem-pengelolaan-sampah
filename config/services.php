@@ -36,8 +36,10 @@ return [
     ],
     'xendit' => [
         'api_key' => env('XENDIT_API_KEY'),
-        'api_url' => env('XENDIT_API_URL', "https://api.xendit.co"),
+        'for_user_id' => env('XENDIT_FOR_USER_ID'),
         'callback_url' => env('XENDIT_CALLBACK_URL'),
         'callback_token' => env('XENDIT_CALLBACK_TOKEN'),
+        'currency' => env('XENDIT_DEFAULT_CURRENCY', 'IDR'),
+        'country' => env('XENDIT_DEFAULT_COUNTRY', 'ID'),
     ],
 ];

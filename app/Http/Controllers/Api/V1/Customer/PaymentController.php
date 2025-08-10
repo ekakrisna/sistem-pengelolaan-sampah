@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\Api\V1\Customer;
 
+use App\Data\CreatePaymentData;
 use App\Data\UserData;
 use App\Http\Controllers\Controller;
-use App\Services\PaymentRequestService;
+use App\Services\Xendit\Manager\XenditPaymentManager;
+use App\Services\Xendit\Queriers\PaymentRequestQueryService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\Response;
 
 class PaymentController extends Controller
 {
@@ -17,7 +20,8 @@ class PaymentController extends Controller
     protected $user;
 
     public function __construct(
-        protected PaymentRequestService $service,
+        protected XenditPaymentManager $xenditPaymentManager,
+        protected PaymentRequestQueryService $paymentRequestQueryService,
         protected Request $request
     ) {
         $this->user = UserData::from($request->user());
@@ -26,67 +30,79 @@ class PaymentController extends Controller
     /**
      * Create a new payment request (E-Wallet, QRIS, VA, Tokenized)
      */
-    public function create(Request $request): JsonResponse
+    public function create(CreatePaymentData $data): JsonResponse
     {
-        $validated = $request->validate([
-            'customer_id'        => ['nullable', 'integer', 'exists:users,id'], // bila customer login, akan di-override
-            'pickup_id'          => ['required', 'integer', 'exists:pickups,id'],
-            'method'             => ['required', Rule::in(['EWALLET', 'QR_CODE', 'VIRTUAL_ACCOUNT', 'TOKENIZED'])],
+        try {
+            // $validated = $request->validate(CreatePaymentData::rules());
+            $data = CreatePaymentData::from($data)
+                ->withDefaults(
+                    defaultCurrency: config('service.xendit.currency', 'IDR'),
+                    defaultCountry: config('service.xendit.country', 'ID'),
+                );
 
-            // items is required as array of objects
-            'items'              => ['required', 'array', 'min:1'],
-            'items.*.pickup_fee_id' => ['required', 'integer', 'exists:pickup_fees,id'],
-            'items.*.qty'            => ['required', 'integer', 'min:1'],
+            $result = $this->xenditPaymentManager->create($data);
 
-            // optional PR fields
-            'channel_code'       => ['nullable', 'string'],
-            'ewallet_phone'      => ['nullable', 'string'],
-            'success_return_url' => ['nullable', 'url'],
-            'va_customer_name'   => ['nullable', 'string'],
-            'va_expires_at'      => ['nullable', 'date'],
-            'payment_method_id'  => ['nullable', 'string'],
-            'metadata'           => ['nullable', 'array'],
-            'for_user_id'        => ['nullable', 'string'],
-            'idempotency_key'    => ['nullable', 'string'],
-            'with_split_rule'    => ['nullable', 'string'],
-            'reference_id'       => ['nullable', 'string'],
-        ]);
-
-        $payment = $this->service->create($validated, $this->user);
-
-        return $this->successResponse(
-            data: $payment,
-            message: 'Payment request created.'
-        );
+            return $this->successResponse(
+                data: $result,
+                message: 'Payment request created successfully.'
+            );
+        } catch (\Throwable $e) {
+            report($e);
+            return $this->errorResponse(
+                name: 'Error::InternalServerError',
+                message: $e->getMessage(),
+                statusCode: Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
     }
 
-    /**
-     * Get payment request by Xendit Payment Request ID
-     */
-    public function show(string $prId, Request $request): JsonResponse
+    public function show(string $id, Request $request)
     {
-        $forUser = $request->query('for_user_id');
-        $result  = $this->service->getByPaymentRequestId($prId, $forUser);
+        try {
+            $forUserId = $request->query('for_user_id');
 
-        return $this->successResponse(
-            data: $result,
-            message: 'Payment request found.'
-        );
+            $result = $this->xenditPaymentManager->getPaymentRequestById(
+                $id,
+                $forUserId
+            );
+            if (empty($result)) {
+                return $this->errorResponse(
+                    name: 'Error::NotFound',
+                    message: 'Payment request not found.',
+                    statusCode: Response::HTTP_NOT_FOUND
+                );
+            }
+
+            return $this->successResponse(
+                data: $result,
+                message: 'Payment request found.'
+            );
+        } catch (\Throwable $e) {
+            // Kalau RuntimeException kembalikan kode dari exception code bila tersedia
+            $code = (int) $e->getCode();
+            $httpCode = ($code >= 400 && $code < 600) ? $code : Response::HTTP_UNPROCESSABLE_ENTITY;
+
+            return $this->errorResponse(
+                name: 'Error::InternalServerError',
+                message: $e->getMessage(),
+                statusCode: $httpCode
+            );
+        }
     }
 
-    /**
-     * Get captures for a Payment Request
-     */
-    public function captures(string $prId, Request $request): JsonResponse
-    {
-        $forUser = $request->query('for_user_id');
-        $limit   = (int) $request->query('limit', 50);
+    // /**
+    //  * Get captures for a Payment Request
+    //  */
+    // public function captures(string $prId, Request $request): JsonResponse
+    // {
+    //     $forUser = $request->query('for_user_id');
+    //     $limit   = (int) $request->query('limit', 50);
 
-        $result = $this->service->getCaptures($prId, $forUser, $limit);
+    //     $result = $this->paymentRequestService->getCaptures($prId, $forUser, $limit);
 
-        return $this->successResponse(
-            data: $result,
-            message: 'Captures found.'
-        );
-    }
+    //     return $this->successResponse(
+    //         data: $result,
+    //         message: 'Captures found.'
+    //     );
+    // }
 }

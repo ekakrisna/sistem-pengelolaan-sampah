@@ -13,8 +13,6 @@ use App\Http\Controllers\Api\V1\SuperAdmin\PickupScheduleController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TransactionController;
 use App\Http\Controllers\Api\V1\SuperAdmin\UserController;
 use App\Http\Controllers\Api\V1\SuperAdmin\WasteTypeController;
-use App\Http\Controllers\Api\V1\Xendit\PaymentController as XenditPaymentController;
-use App\Http\Controllers\Api\V1\Xendit\WebhookController;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -58,8 +56,10 @@ Route::prefix(config('app.api.version'))
                 });
 
                 // Payments
-                Route::get('payment-channels', [CustomerPaymentController::class, 'channels']);
+                // Route::get('payment-channels', [CustomerPaymentController::class, 'channels']);
                 Route::prefix('payments')->name('payments.')->group(function () {
+                    Route::get('{id}', [CustomerPaymentController::class, 'show']);
+
                     Route::prefix('request')->group(function () {
                         Route::post('/', [CustomerPaymentController::class, 'create']);
                         Route::get('/{prId}', [CustomerPaymentController::class, 'show']);
