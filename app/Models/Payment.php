@@ -30,7 +30,7 @@ class Payment extends Model
 	protected $casts = [
 		'xendit_data' => 'array',
 		'paid_at' => 'datetime',
-		'amount' => 'decimal:2',
+		'amount' => 'int',
 	];
 
 	public function customer()

@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Services\Xendit\Methods;
+namespace App\Services\Xendit\Requests;
 
-use App\Services\Xendit\Methods\BaseXenditPaymentService;
+use App\Services\Xendit\Requests\BaseXenditPaymentRequestService;
 
-class DirectDebitPHSubsequentService extends BaseXenditPaymentService
+class EwalletTokenizedSubsequentPaymentRequestService extends BaseXenditPaymentRequestService
 {
     /**
      * @param string|null $referenceId
      * @param int    $amount
-     * @param string $paymentMethodId  contoh: pm-xxxx (hasil account linking)
+     * @param string $paymentMethodId  contoh: pm-xxxx (hasil tokenization/linking)
      * @param array|null $metadata
      * @param string|null $idempotencyKey
      * @param string|null $forUserId
@@ -24,12 +24,12 @@ class DirectDebitPHSubsequentService extends BaseXenditPaymentService
         ?string $forUserId = null,
         ?string $withSplitRuleId = null
     ): array {
-        $referenceId = $this->ensureReferenceId($referenceId, 'DDPH');
+        $referenceId = $this->ensureReferenceId($referenceId, 'EWTKN');
 
         $payload = [
             'reference_id' => $referenceId,
             'amount' => $amount,
-            'currency' => 'PHP',            // PH direct debit
+            'currency' => $this->defaultCurrency,
             'payment_method_id' => $paymentMethodId,
             'metadata' => $metadata,
         ];

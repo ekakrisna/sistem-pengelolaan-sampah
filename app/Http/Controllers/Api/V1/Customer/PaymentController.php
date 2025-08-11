@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Api\V1\Customer;
 
 use App\Data\CreatePaymentData;
-use App\Data\PaymentData;
 use App\Data\UserData;
 use App\Enums\UserEnum;
 use App\Http\Controllers\Controller;
 use App\Services\PaymentService;
 use App\Services\TransactionService;
-use App\Services\Xendit\Manager\XenditPaymentManager;
+use App\Services\Xendit\Managers\PaymentRequestManager;
 use App\Services\Xendit\Queriers\PaymentRequestQueryService;
 use App\Traits\ApiResponse;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -25,7 +24,7 @@ class PaymentController extends Controller
     protected $user;
 
     public function __construct(
-        protected XenditPaymentManager $xenditPaymentManager,
+        protected PaymentRequestManager $xenditPaymentManager,
         protected PaymentRequestQueryService $paymentRequestQueryService,
         protected Request $request,
         protected PaymentService $paymentService,

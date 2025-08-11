@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Xendit\Methods;
+namespace App\Services\Xendit\Requests;
 
 use Illuminate\Support\Str;
 use Xendit\Configuration;
@@ -8,7 +8,7 @@ use Xendit\PaymentRequest\PaymentRequestApi;
 use Xendit\PaymentRequest\PaymentRequestParameters;
 use Xendit\XenditSdkException;
 
-class BaseXenditPaymentService
+class BaseXenditPaymentRequestService
 {
     protected PaymentRequestApi $api;
     protected ?string $defaultForUserId;

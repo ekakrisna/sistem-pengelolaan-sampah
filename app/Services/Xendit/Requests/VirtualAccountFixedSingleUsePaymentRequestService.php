@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Services\Xendit\Methods;
+namespace App\Services\Xendit\Requests;
 
 use Carbon\CarbonInterface;
-use App\Services\Xendit\Methods\BaseXenditPaymentService;
+use App\Services\Xendit\Requests\BaseXenditPaymentRequestService;
 use Carbon\Carbon;
 
-class VirtualAccountFixedSingleUseService extends BaseXenditPaymentService
+class VirtualAccountFixedSingleUsePaymentRequestService extends BaseXenditPaymentRequestService
 {
     /**
      * @param string|null $referenceId          reference transaksi kamu (Payment Request)

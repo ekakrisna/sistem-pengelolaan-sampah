@@ -1,42 +1,44 @@
 <?php
 
-namespace App\Services\Xendit\Manager;
+namespace App\Services\Xendit\Managers;
 
 use App\Data\CreatePaymentData;
 use App\Enums\PaymentChannelCategory;
-use App\Services\Xendit\Methods\DirectDebitPHSubsequentService;
-use App\Services\Xendit\Methods\EwalletRedirectOneTimeService;
-use App\Services\Xendit\Methods\EwalletTokenizedSubsequentService;
-use App\Services\Xendit\Methods\QrisDynamicFixedService;
-use App\Services\Xendit\Methods\RetailOutletOneTimeService;
-use App\Services\Xendit\Methods\VirtualAccountFixedSingleUseService;
+use App\Services\Xendit\Requests\CardsPaymentRequestService;
+use App\Services\Xendit\Requests\DirectDebitPaymentRequestService;
+use App\Services\Xendit\Requests\EwalletRedirectOneTimePaymentRequestService;
+use App\Services\Xendit\Requests\EwalletTokenizedSubsequentPaymentRequestService;
+use App\Services\Xendit\Requests\QrisDynamicFixedPaymentRequestService;
+use App\Services\Xendit\Requests\RetailOutletOneTimePaymentRequestService;
+use App\Services\Xendit\Requests\VirtualAccountFixedSingleUsePaymentRequestService;
 use App\Services\Xendit\Queriers\PaymentRequestQueryService;
 use RuntimeException;
 
-class XenditPaymentManager
+class PaymentRequestManager
 {
     public function __construct(
-        protected EwalletRedirectOneTimeService $ewalletRedirect,
-        protected EwalletTokenizedSubsequentService $ewalletTokenized,
-        protected QrisDynamicFixedService $qrisDynamicFixed,
-        protected VirtualAccountFixedSingleUseService $vaSingleUseFixed,
-        protected DirectDebitPHSubsequentService $directDebitPh,
+        protected EwalletRedirectOneTimePaymentRequestService $ewalletRedirect,
+        protected EwalletTokenizedSubsequentPaymentRequestService $ewalletTokenized,
+        protected QrisDynamicFixedPaymentRequestService $qrisDynamicFixed,
+        protected VirtualAccountFixedSingleUsePaymentRequestService $vaSingleUseFixed,
+        protected DirectDebitPaymentRequestService $directDebitPh,
         protected PaymentRequestQueryService $prQuery,
-        protected RetailOutletOneTimeService $retailOutletOneTime,
+        protected RetailOutletOneTimePaymentRequestService $overTheCounterOneTime,
+        protected CardsPaymentRequestService $cardsService
     ) {}
 
     public function create(CreatePaymentData $dto): array
     {
         // if (empty($dto->reference_id)) {
         //     $prefix = match ($dto->channel_category) {
-        //         PaymentChannelCategory::EWALLET => 'EWALLET',
-        //         PaymentChannelCategory::QRIS => 'QRIS',
+        //         PaymentChannelCategory::EWALLET         => 'EWALLET',
+        //         PaymentChannelCategory::QRIS            => 'QRIS',
         //         PaymentChannelCategory::VIRTUAL_ACCOUNT => 'VA',
         //         PaymentChannelCategory::DIRECT_DEBIT_PH => 'DDPH',
-        //         PaymentChannelCategory::RETAIL_OUTLET => 'RO',
+        //         PaymentChannelCategory::OVER_THE_COUNTER => 'OTC',
+        //         PaymentChannelCategory::CARDS           => 'CARD',
         //         default => 'PAY',
         //     };
-        //     // pakai helper yang sama (boleh di-duplikasi kecil di manager, atau diekspor ke trait)
         //     $dto->reference_id = $prefix . '-' . now()->format('YmdHis') . '-' . uniqid();
         // }
 
@@ -71,10 +73,10 @@ class XenditPaymentManager
                 forUserId: $dto->for_user_id,
                 withSplitRuleId: $dto->with_split_rule_id
             ),
-            PaymentChannelCategory::RETAIL_OUTLET => $this->retailOutletOneTime->create(
+            PaymentChannelCategory::OVER_THE_COUNTER => $this->overTheCounterOneTime->create(
                 referenceId: $dto->reference_id,
                 amount: $dto->amount,
-                channelCode: (string) $dto->channel_code,   // 'ALFAMART'|'INDOMARET'
+                channelCode: (string) $dto->channel_code,   // ALFAMART|INDOMARET
                 payerName: (string) $dto->payer_name,
                 expiresAt: $dto->expires_at?->utc(),
                 paymentCode: $dto->payment_code,
@@ -83,6 +85,37 @@ class XenditPaymentManager
                 forUserId: $dto->for_user_id,
                 withSplitRuleId: $dto->with_split_rule_id,
             ),
+            PaymentChannelCategory::CARDS => $this->cardsService->create(
+                referenceId: $dto->reference_id,
+                amount: $dto->amount,
+
+                // pilih salah satu: saved card atau token
+                paymentMethodId: $dto->payment_method_id,       // saved card
+                oneTimeToken: $dto->card_one_time_token,     // Xendit.js one-time token
+                cardTokenId: $dto->card_token_id,           // alternatif token_id
+
+                // 3DS/return URLs (top-level channel_properties)
+                successReturnUrl: $dto->success_return_url,
+                failureReturnUrl: $dto->failure_return_url,
+                cancelReturnUrl: $dto->cancel_return_url,
+                pendingReturnUrl: $dto->pending_return_url,
+
+                // capture & initiator
+                captureMethod: $dto->capture_method ?? 'AUTOMATIC',
+                initiator: $dto->initiator,               // CUSTOMER|MERCHANT
+
+                // opsi channel_properties khusus kartu
+                requireAuth: $dto->card_require_auth,
+                cardOnFileType: $dto->card_on_file_type,
+                merchantIdTag: $dto->card_merchant_id_tag,
+                cvv: $dto->card_cvv,
+
+                metadata: $dto->metadata,
+                idempotencyKey: $dto->idempotency_key,
+                forUserId: $dto->for_user_id,
+                withSplitRuleId: $dto->with_split_rule_id
+            ),
+            default => throw new RuntimeException('Channel category not supported'),
         };
     }
 

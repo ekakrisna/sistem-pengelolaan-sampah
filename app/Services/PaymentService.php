@@ -115,7 +115,7 @@ class PaymentService
     /**
      * Simpan Payment lokal dari hasil Payment Request Xendit
      *
-     * @param  array $pr   hasil dari XenditPaymentManager->create()
+     * @param  array $pr   hasil dari PaymentRequestManager->create()
      * @param  array $ctx  context tambahan: customer_id?, channel_category?, channel_code?, currency?, country?, idempotency_key?, dll
      * @return Payment
      */

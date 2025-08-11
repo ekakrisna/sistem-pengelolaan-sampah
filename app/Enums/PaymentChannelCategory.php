@@ -8,5 +8,6 @@ enum PaymentChannelCategory: string
     case QRIS = 'QRIS';
     case VIRTUAL_ACCOUNT = 'VIRTUAL_ACCOUNT';
     case DIRECT_DEBIT_PH = 'DIRECT_DEBIT_PH';
-    case RETAIL_OUTLET = 'RETAIL_OUTLET';
+    case OVER_THE_COUNTER = 'OVER_THE_COUNTER';
+    case CARDS = 'CARDS';
 }

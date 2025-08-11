@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Xendit\Customer;
+namespace App\Services\Xendit\Customers;
 
 use Illuminate\Support\Str;
 use Xendit\Configuration;

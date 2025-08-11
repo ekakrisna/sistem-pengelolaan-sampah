@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Services\Xendit\Methods;
+namespace App\Services\Xendit\Requests;
 
 use Carbon\Carbon;
 
-class RetailOutletOneTimeService extends BaseXenditPaymentService
+class RetailOutletOneTimePaymentRequestService extends BaseXenditPaymentRequestService
 {
     /**
      * Create one-time Retail Outlet payment code (e.g., ALFAMART / INDOMARET)

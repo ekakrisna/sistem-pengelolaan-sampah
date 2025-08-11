@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Services\Xendit\Methods;
+namespace App\Services\Xendit\Requests;
 
-use App\Services\Xendit\Methods\BaseXenditPaymentService;
+use App\Services\Xendit\Requests\BaseXenditPaymentRequestService;
 
 
-class QrisDynamicFixedService extends BaseXenditPaymentService
+class QrisDynamicFixedPaymentRequestService extends BaseXenditPaymentRequestService
 {
     /**
      * @param string|null $referenceId
