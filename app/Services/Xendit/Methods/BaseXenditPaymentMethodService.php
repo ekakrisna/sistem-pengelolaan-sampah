@@ -6,6 +6,7 @@ namespace App\Services\Xendit\Methods;
 
 use Xendit\Configuration;
 use Xendit\PaymentMethod\PaymentMethodApi;
+use Xendit\PaymentMethod\PaymentMethodParameters;
 
 abstract class BaseXenditPaymentMethodService
 {
@@ -32,11 +33,12 @@ abstract class BaseXenditPaymentMethodService
         $payload = $this->clean($payload);
 
         try {
-            $params = new \Xendit\PaymentMethod\PaymentMethodParameters($payload);
+            $params = new PaymentMethodParameters($payload);
             $resp   = $this->pmApi->createPaymentMethod($forUserId ?: $this->defaultForUserId, $params);
+
             return json_decode(json_encode($resp), true) ?: [];
         } catch (\Xendit\XenditSdkException $e) {
-            $msg = 'Xendit createPaymentMethod failed: ' . $e->getMessage() . ' | ' . json_encode($e->getFullError());
+            $msg = 'Xendit createPaymentMethod failed: ' . $e->getMessage();
             throw new \RuntimeException($msg, previous: $e);
         }
     }

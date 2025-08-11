@@ -36,7 +36,7 @@ class PaymentController extends Controller
     /**
      * Create a new payment request (E-Wallet, QRIS, VA, Tokenized)
      */
-    public function create(CreatePaymentData $data): JsonResponse
+    public function store(CreatePaymentData $data): JsonResponse
     {
         try {
             $actor = $this->user;

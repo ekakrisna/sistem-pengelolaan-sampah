@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Customer\CatalogController;
 use App\Http\Controllers\Api\V1\Customer\PaymentController as CustomerPaymentController;
+use App\Http\Controllers\Api\V1\Customer\PaymentMethodController;
 use App\Http\Controllers\Api\V1\Customer\PickupController as CustomerPickupController;
 use App\Http\Controllers\Api\V1\Customer\ProfileController;
 use App\Http\Controllers\Api\V1\Customer\TransactionController as CustomerTransactionController;
@@ -58,14 +59,18 @@ Route::prefix(config('app.api.version'))
                 // Payments
                 // Route::get('payment-channels', [CustomerPaymentController::class, 'channels']);
                 Route::prefix('payments')->name('payments.')->group(function () {
-                    Route::get('{id}', [CustomerPaymentController::class, 'show']);
 
-                    Route::prefix('request')->group(function () {
-                        Route::post('/', [CustomerPaymentController::class, 'create']);
+                    Route::prefix('requests')->group(function () {
+                        Route::post('/', [CustomerPaymentController::class, 'store']);
                         Route::get('/{prId}', [CustomerPaymentController::class, 'show']);
-                        Route::get('/{prId}/captures', [CustomerPaymentController::class, 'captures']);
+                    });
+
+                    Route::prefix('methods')->group(function () {
+                        Route::post('/', [PaymentMethodController::class, 'store']);
+                        Route::get('/{pmId}', [PaymentMethodController::class, 'show']);
                     });
                 });
+
 
                 // Transactions
                 Route::prefix('transactions')->name('transactions.')->group(function () {

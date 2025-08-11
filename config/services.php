@@ -42,5 +42,6 @@ return [
         'currency' => env('XENDIT_DEFAULT_CURRENCY', 'IDR'),
         'country' => env('XENDIT_DEFAULT_COUNTRY', 'ID'),
         'expiry_hours' => env('XENDIT_EXPIRY_HOURS', 24),
+        'cards_allow_pci' => (bool) env('XENDIT_CARDS_ALLOW_PCI', false),
     ],
 ];

@@ -34,6 +34,7 @@ class EwalletPaymentMethodService extends BaseXenditPaymentMethodService
             'billing_information' => $billingInformation,
         ];
 
+
         if ($customerId) $payload['customer_id'] = $customerId;
         elseif (!empty($customerObject)) $payload['customer'] = $customerObject;
 

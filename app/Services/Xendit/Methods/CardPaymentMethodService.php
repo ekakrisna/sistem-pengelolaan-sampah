@@ -39,7 +39,9 @@ class CardPaymentMethodService extends BaseXenditPaymentMethodService
             'currency'           => $currency,
             'channel_properties' => $channelProps ?: (object)[],
         ];
-        if (!empty($cardInformation)) {
+
+        $allowPci = (bool) config('services.xendit.cards_allow_pci', false);
+        if (!empty($cardInformation) && !$allowPci) {
             $card['card_information'] = $cardInformation; // ⚠️ only if PCI
         }
 

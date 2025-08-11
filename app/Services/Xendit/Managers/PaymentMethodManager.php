@@ -2,11 +2,13 @@
 
 namespace App\Services\Xendit\Managers;
 
+use RuntimeException;
+use App\Data\PaymentMethod\CreatePaymentMethodData;
+use App\Enums\PaymentMethodType;
+use App\Services\Xendit\Queriers\PaymentMethodQueryService;
+use App\Services\Xendit\Methods\EwalletPaymentMethodService;
 use App\Services\Xendit\Methods\CardPaymentMethodService;
 use App\Services\Xendit\Methods\DirectDebitPaymentMethodService;
-use App\Services\Xendit\Methods\EwalletPaymentMethodService;
-use App\Services\Xendit\Queriers\PaymentMethodQueryService;
-use RuntimeException;
 
 class PaymentMethodManager
 {
@@ -15,91 +17,99 @@ class PaymentMethodManager
         protected CardPaymentMethodService        $card,
         protected DirectDebitPaymentMethodService $directDebit,
         protected PaymentMethodQueryService       $pmQuery
-
     ) {}
 
     /**
-     * Router utama (mirip PaymentRequestManager::create).
-     * $dto: object/array yang minimal punya key: type ('EWALLET'|'CARD'|'DIRECT_DEBIT').
+     * Router utama — gunakan DTO Spatie (CreatePaymentMethodData).
      */
-    public function create(object|array $dto): array
+    public function create(CreatePaymentMethodData $dto): array
     {
-        // akses gampang: pakai array_get style
-        $get = fn(string $k, $d = null) => (is_array($dto) ? ($dto[$k] ?? $d) : ($dto->$k ?? $d));
-        $type = strtoupper((string) $get('type'));
+        // isi default ringan (currency/country/reusability) bila belum ada
+        $dto = $dto->withDefaults(
+            defaultCurrency: config('services.xendit.currency', 'IDR'),
+            defaultCountry: config('services.xendit.country',  'ID'),
+        );
 
-        return match ($type) {
-            'EWALLET'      => $this->createWallet($dto),
-            'CARD'         => $this->createCard($dto),
-            'DIRECT_DEBIT' => $this->createDirectDebit($dto),
-            default        => throw new RuntimeException('Payment method type not supported'),
+        return match ($dto->type) {
+            PaymentMethodType::EWALLET      => $this->createWallet($dto),
+            PaymentMethodType::CARD         => $this->createCard($dto),
+            PaymentMethodType::DIRECT_DEBIT => $this->createDirectDebit($dto),
+            default => throw new RuntimeException('Payment method type not supported'),
         };
     }
 
-    /** Ambil Payment Method by ID */
+    /** Ambil Payment Method by ID (helper query) */
     public function getById(string $paymentMethodId, ?string $forUserId = null): array
     {
         return $this->pmQuery->getById($paymentMethodId, $forUserId);
     }
 
     /** ===== EWALLET ===== */
-    protected function createWallet(object|array $dto): array
+    protected function createWallet(CreatePaymentMethodData $dto): array
     {
-        $get = fn(string $k, $d = null) => (is_array($dto) ? ($dto[$k] ?? $d) : ($dto->$k ?? $d));
-
         return $this->wallet->create(
-            channelCode: (string) $get('channel_code'), // OVO|SHOPEEPAY|DANA|GOPAY|LINKAJA
-            reusability: (string) ($get('reusability') ?? 'MULTIPLE_USE'),
-            customerId: $get('customer_id'),
-            customerObject: $get('customer'),
-            successReturnUrl: $get('success_return_url'),
-            failureReturnUrl: $get('failure_return_url'),
-            cancelReturnUrl: $get('cancel_return_url'),
-            pendingReturnUrl: $get('pending_return_url'),
-            metadata: $get('metadata'),
-            billingInformation: $get('billing_information'),
-            forUserId: $get('for_user_id')
+            channelCode: strtoupper((string) $dto->channel_code),
+            reusability: $dto->reusability->value,
+            customerId: $this->nn($dto->customer_id),
+            customerObject: $dto->customer?->toArray(),                    // inline customer (opsional)
+            successReturnUrl: $this->nn($dto->success_return_url),
+            failureReturnUrl: $this->nn($dto->failure_return_url),
+            cancelReturnUrl: $this->nn($dto->cancel_return_url),
+            pendingReturnUrl: $this->nn($dto->pending_return_url),
+            metadata: $dto->metadata ?: null,
+            billingInformation: $dto->billing_information?->toArray(),
+            forUserId: $this->nn($dto->for_user_id)
         );
     }
 
-    /** ===== CARD ===== */
-    protected function createCard(object|array $dto): array
+    /** ===== CARD (saved PM / linking) ===== */
+    protected function createCard(CreatePaymentMethodData $dto): array
     {
-        $get = fn(string $k, $d = null) => (is_array($dto) ? ($dto[$k] ?? $d) : ($dto->$k ?? $d));
-
         return $this->card->create(
-            currency: $get('currency'), // default ke config kalau null
-            reusability: (string) ($get('reusability') ?? 'MULTIPLE_USE'),
-            customerId: $get('customer_id'),
-            customerObject: $get('customer'),
-            skipThreeDS: $get('skip_three_d_secure'),
-            successReturnUrl: $get('success_return_url'),
-            failureReturnUrl: $get('failure_return_url'),
-            cardOnFileType: $get('cardonfile_type'),
-            expiresAt: $get('expires_at') instanceof \DateTimeInterface ? $get('expires_at') : null,
-            installmentConfiguration: $get('installment_configuration'),
-            merchantIdTag: $get('merchant_id_tag'),
-            cardInformation: $get('card_information'), // ⚠️ hanya kalau PCI DSS
-            metadata: $get('metadata'),
-            billingInformation: $get('billing_information'),
-            forUserId: $get('for_user_id')
+            currency: $dto->currency ?? config('services.xendit.currency', 'IDR'),
+            reusability: $dto->reusability->value,
+            customerId: $this->nn($dto->customer_id),
+            customerObject: $dto->customer?->toArray(),
+            // channel properties:
+            skipThreeDS: $dto->skip_three_d_secure,
+            successReturnUrl: $this->nn($dto->success_return_url),
+            failureReturnUrl: $this->nn($dto->failure_return_url),
+            cardOnFileType: $dto->cardonfile_type?->value,
+            expiresAt: $dto->expires_at?->toDateTimeImmutable(),
+            installmentConfiguration: $dto->installment_configuration ?: null,
+            merchantIdTag: $this->nn($dto->merchant_id_tag),
+            // PCI path (jangan isi kalau tidak PCI DSS)
+            cardInformation: $dto->card_information?->toArray(),
+            metadata: $dto->metadata ?: null,
+            billingInformation: $dto->billing_information?->toArray(),
+            forUserId: $this->nn($dto->for_user_id)
         );
     }
 
     /** ===== DIRECT DEBIT ===== */
-    protected function createDirectDebit(object|array $dto): array
+    protected function createDirectDebit(CreatePaymentMethodData $dto): array
     {
-        $get = fn(string $k, $d = null) => (is_array($dto) ? ($dto[$k] ?? $d) : ($dto->$k ?? $d));
-
         return $this->directDebit->create(
-            channelCode: (string) $get('channel_code'), // contoh PH: BPI|UBP
-            reusability: (string) ($get('reusability') ?? 'MULTIPLE_USE'),
-            customerId: $get('customer_id'),
-            customerObject: $get('customer'),
-            channelProperties: $get('channel_properties'),
-            metadata: $get('metadata'),
-            billingInformation: $get('billing_information'),
-            forUserId: $get('for_user_id')
+            channelCode: strtoupper((string) $dto->channel_code),       // contoh PH: BPI|UBP
+            reusability: $dto->reusability->value,
+            customerId: $this->nn($dto->customer_id),
+            customerObject: $dto->customer?->toArray(),
+            channelProperties: $dto->channel_properties ?: null,              // properti spesifik bank
+            metadata: $dto->metadata ?: null,
+            billingInformation: $dto->billing_information?->toArray(),
+            forUserId: $this->nn($dto->for_user_id)
         );
+    }
+
+    /**
+     * Normalizer kecil: "" → null, trim jika string.
+     */
+    private function nn(mixed $v): mixed
+    {
+        if (is_string($v)) {
+            $v = trim($v);
+            return $v === '' ? null : $v;
+        }
+        return $v;
     }
 }
