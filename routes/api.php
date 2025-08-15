@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\V1\Customer\PaymentMethodController;
 use App\Http\Controllers\Api\V1\Customer\PickupController as CustomerPickupController;
 use App\Http\Controllers\Api\V1\Customer\ProfileController;
 use App\Http\Controllers\Api\V1\Customer\TransactionController as CustomerTransactionController;
+use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentRequestController;
+use App\Http\Controllers\Api\V1\Customer\Xendit\ReusablePaymentCodeController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PaymentController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupFeeController;
@@ -71,11 +73,32 @@ Route::prefix(config('app.api.version'))
                     });
                 });
 
-
                 // Transactions
                 Route::prefix('transactions')->name('transactions.')->group(function () {
                     Route::get('/', [CustomerTransactionController::class, 'index']);
                     Route::get('{id}', [CustomerTransactionController::class, 'show']);
+                });
+
+                Route::prefix('xendit')->name('xendit.')->group(function () {
+                    Route::prefix('payments')->name('payments.')->group(function () {
+                        Route::get('{id}', [PaymentRequestController::class, 'showByPaymentId']);
+                    });
+
+                    Route::prefix('payment-requests')->name('payment-requests.')->group(function () {
+                        Route::get('{id}', [PaymentRequestController::class, 'showById']);
+                        Route::post('{id}/cancel', [PaymentRequestController::class, 'cancelPaymentRequest']);
+                        Route::post('{id}/simulate', [PaymentRequestController::class, 'simulatePaymentRequest']);
+
+                        Route::prefix('reusable-payment-code')->name('reusable-payment-code.')->group(function () {
+                            Route::post('create', [ReusablePaymentCodeController::class, 'createNoAmount']);
+                            Route::post('create-with-amount', [ReusablePaymentCodeController::class, 'createWithAmount']);
+                        });
+
+                        // Route::post('card',  [CardPayController::class, 'create']);
+                        // Route::post('qris',  [QrisPayController::class, 'create']);
+                        // Route::post('va',    [VaPayController::class, 'create']);
+                        // Route::post('ewallet', [EwalletPayController::class, 'create']);
+                    });
                 });
             });
         });

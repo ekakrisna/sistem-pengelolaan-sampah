@@ -33,3 +33,25 @@ if (!function_exists('successResponse')) {
         ]);
     }
 }
+
+if (!function_exists('normalizeXenditException')) {
+    function normalizeXenditException(\Throwable $th): array
+    {
+        $code = (is_int($th->getCode()) && $th->getCode() >= 400 && $th->getCode() <= 599)
+            ? $th->getCode()
+            : 500;
+
+
+        $name = 'Error::InternalServerError';
+        $message = $th->getMessage();
+
+        $json = json_decode($th->getMessage(), true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
+            $name = data_get($json, 'details.error_code') ?? data_get($json, 'error') ?? $name;
+            $message = data_get($json, 'details.message') ?? data_get($json, 'message') ?? $message;
+        }
+
+
+        return [$name, $message, $code];
+    }
+}
