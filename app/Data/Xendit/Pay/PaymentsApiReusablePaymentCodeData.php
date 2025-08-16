@@ -2,8 +2,9 @@
 
 namespace App\Data\Xendit\Pay;
 
-use App\Data\Xendit\Pay\Common\ItemData;
+use App\Data\Xendit\Common\ItemData;
 use App\Enums\Xendit\Common\CaptureMethod;
+use App\Enums\Xendit\Common\ChannelCode;
 use App\Enums\Xendit\Common\Country;
 use App\Enums\Xendit\Common\Currency;
 use Illuminate\Validation\Rule;
@@ -17,28 +18,17 @@ class PaymentsApiReusablePaymentCodeData extends Data
 {
     public function __construct(
         public string $reference_id,
-
         #[WithCast(EnumCast::class)]
         public Country $country,
-
         #[WithCast(EnumCast::class)]
         public Currency $currency,
-
-        /** amount boleh NULL untuk reusable payment code “no amount” */
         public ?float $request_amount = null,
-
         #[WithCast(EnumCast::class)]
         public ?CaptureMethod $capture_method = CaptureMethod::AUTOMATIC,
-
-        /** contoh: "QRIS", "ALFAMART", "BRI_VIRTUAL_ACCOUNT", dst. */
-        public string $channel_code,
-
-        /** properti khusus per channel (expires_at, display_name, virtual_account_number, dll) */
+        public ChannelCode $channel_code,
         public array $channel_properties,
-
         public ?string $description = null,
         public ?array $metadata = null,
-
         /** @var DataCollection<ItemData>|null */
         #[DataCollectionOf(ItemData::class)]
         public ?DataCollection $items = null,
@@ -48,23 +38,16 @@ class PaymentsApiReusablePaymentCodeData extends Data
     {
         return [
             'reference_id'       => ['required', 'string', 'min:1', 'max:255'],
-
             'country'            => ['required', Rule::in(Country::values())],
             'currency'           => ['required', Rule::in(Currency::values())],
-
-            // Reusable payment code: amount boleh null; kalau mau “with amount” tinggal isi & valid
             'request_amount'     => ['nullable', 'numeric', 'min:0'],
-
             'capture_method'     => ['nullable', Rule::in(CaptureMethod::values())],
-
-            'channel_code'       => ['required', 'string', 'max:50'],
+            'channel_code'       => ['required', Rule::in(ChannelCode::values())],
             'channel_properties' => ['required', 'array'],
-
             'description'        => ['nullable', 'string', 'min:1', 'max:1000'],
             'metadata'           => ['nullable', 'array'],
-
             'items'              => ['nullable', 'array'],
-            'items.*'            => ['array'], // tiap item akan dicast ke ItemData via DataCollectionOf
+            'items.*'            => ['array'],
         ];
     }
 

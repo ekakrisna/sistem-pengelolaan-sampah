@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Customer\PickupController as CustomerPickupContr
 use App\Http\Controllers\Api\V1\Customer\ProfileController;
 use App\Http\Controllers\Api\V1\Customer\TransactionController as CustomerTransactionController;
 use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentRequestController;
+use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentsPayController;
 use App\Http\Controllers\Api\V1\Customer\Xendit\ReusablePaymentCodeController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PaymentController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupController;
@@ -94,10 +95,12 @@ Route::prefix(config('app.api.version'))
                             Route::post('create-with-amount', [ReusablePaymentCodeController::class, 'createWithAmount']);
                         });
 
-                        // Route::post('card',  [CardPayController::class, 'create']);
-                        // Route::post('qris',  [QrisPayController::class, 'create']);
-                        // Route::post('va',    [VaPayController::class, 'create']);
-                        // Route::post('ewallet', [EwalletPayController::class, 'create']);
+                        Route::prefix('pay')->name('pay.')->group(function () {
+                            Route::post('card',  [PaymentsPayController::class, 'create_card']);
+                            Route::post('qris',  [PaymentsPayController::class, 'create_qris']);
+                            Route::post('va',    [PaymentsPayController::class, 'create_va']);
+                            Route::post('ewallet', [PaymentsPayController::class, 'create_ewallet']);
+                        });
                     });
                 });
             });

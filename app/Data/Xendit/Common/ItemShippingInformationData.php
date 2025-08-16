@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Data\Xendit\Pay\Common;
+namespace App\Data\Xendit\Common;
 
 use Spatie\LaravelData\Data;
 use Illuminate\Validation\Rule;

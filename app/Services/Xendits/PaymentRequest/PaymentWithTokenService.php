@@ -6,7 +6,7 @@ use App\Data\Xendit\Common\PaymentRequestResponseData;
 use App\Data\Xendit\Pay\Token\PayWithPaymentTokenData;
 use App\Services\Xendits\Http\XenditService;
 
-class PaymentPayService extends XenditService
+class PaymentWithTokenService extends XenditService
 {
     // ... metode lain (card/qris/va/ewallet)
 

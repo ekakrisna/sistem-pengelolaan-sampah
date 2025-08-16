@@ -2,8 +2,8 @@
 
 namespace App\Data\Xendit\Pay;
 
-use App\Data\Xendit\Pay\Common\ItemData;
-use App\Data\Xendit\Pay\Common\TokenChannelPropsData;
+use App\Data\Xendit\Common\ItemData;
+use App\Data\Xendit\Common\TokenChannelPropsData;
 use App\Enums\Xendit\Common\CaptureMethod;
 use App\Enums\Xendit\Common\Country;
 use App\Enums\Xendit\Common\Currency;
@@ -22,17 +22,13 @@ class PaymentsApiPayWithTokenData extends Data
         public float $request_amount,
         public ?string $description = null,
         public ?array $metadata = null,
-
         #[WithCast(EnumCast::class)]
         public Country $country = Country::ID,
-
         #[WithCast(EnumCast::class)]
         public Currency $currency = Currency::IDR,
-
         #[WithCast(EnumCast::class)]
         public ?CaptureMethod $capture_method = CaptureMethod::AUTOMATIC,
         public ?TokenChannelPropsData $channel_properties,
-
         /** @var DataCollection<ItemData>|null */
         #[DataCollectionOf(ItemData::class)]
         public ?DataCollection $items = null,
@@ -76,7 +72,6 @@ class PaymentsApiPayWithTokenData extends Data
         ], static fn($v) => $v !== null && $v !== '');
     }
 
-    /** Helper cepat */
     public static function make(
         string $referenceId,
         float $amount,
