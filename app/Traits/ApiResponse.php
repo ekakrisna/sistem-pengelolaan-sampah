@@ -47,14 +47,16 @@ trait ApiResponse
 
         $name = 'Error::InternalServerError';
         $message = $th->getMessage();
+        $errors = [];
 
         $json = json_decode($th->getMessage(), true);
         if (json_last_error() === JSON_ERROR_NONE && is_array($json)) {
             $name = data_get($json, 'details.error_code') ?? data_get($json, 'error') ?? $name;
             $message = data_get($json, 'details.message') ?? data_get($json, 'message') ?? $message;
+            $errors = data_get($json, 'details.errors') ?? data_get($json, 'errors') ?? $errors;
         }
 
 
-        return [$name, $message, $code];
+        return [$name, $message, $code, $errors];
     }
 }

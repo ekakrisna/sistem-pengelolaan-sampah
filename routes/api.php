@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\Customer\PaymentMethodController;
 use App\Http\Controllers\Api\V1\Customer\PickupController as CustomerPickupController;
 use App\Http\Controllers\Api\V1\Customer\ProfileController;
 use App\Http\Controllers\Api\V1\Customer\TransactionController as CustomerTransactionController;
+use App\Http\Controllers\Api\V1\Customer\Xendit\AccountController;
 use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentRequestController;
 use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentsPayAndSaveController;
 use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentsPayController;
@@ -73,6 +74,12 @@ Route::prefix(config('app.api.version'))
                 });
 
                 Route::prefix('xendit')->name('xendit.')->group(function () {
+
+                    Route::prefix('accounts')->name('accounts.')->group(function () {
+                        Route::get('/', [AccountController::class, 'getAccounts']);
+                        Route::post('create', [AccountController::class, 'createAccount']);
+                    });
+
                     Route::prefix('payments')->name('payments.')->group(function () {
                         Route::get('{id}', [PaymentRequestController::class, 'showByPaymentId']);
                     });

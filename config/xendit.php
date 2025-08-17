@@ -10,13 +10,12 @@ return [
         'sleep' => env('XENDIT_RETRY_SLEEP', 200),
     ],
 
-    // === Logging options ===
     'logging' => [
         'enabled'     => env('XENDIT_LOG_ENABLED', true),
-        'channel'     => env('XENDIT_LOG_CHANNEL', 'xendit'), // gunakan channel khusus
+        'channel'     => env('XENDIT_LOG_CHANNEL', 'xendit'),
         'level'       => env('XENDIT_LOG_LEVEL', 'info'),
-        'log_body'    => env('XENDIT_LOG_BODY', false), // off by default untuk keamanan
-        'max_length'  => env('XENDIT_LOG_MAX', 4000),   // truncate payload/response
+        'log_body'    => env('XENDIT_LOG_BODY', false),
+        'max_length'  => env('XENDIT_LOG_MAX', 4000),
         'mask_fields' => [
             'card_number',
             'expiry_month',

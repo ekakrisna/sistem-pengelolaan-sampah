@@ -15,13 +15,16 @@ class XenditService
     /** Default context (optional) */
     protected ?string $defaultForUserId = null;
     protected ?string $defaultSplitRuleId = null;
+    protected ?string $defaultIdempotencyKey = null;
 
     public function __construct(
         ?string $forUserId = null,
         ?string $splitRuleId = null,
+        ?string $idempotencyKey = null
     ) {
         $this->defaultForUserId  = $forUserId;
         $this->defaultSplitRuleId = $splitRuleId;
+        $this->defaultIdempotencyKey = $idempotencyKey;
 
         $this->client = Http::baseUrl(config('xendit.base_url'))
             ->timeout((int) config('xendit.timeout', 15))
@@ -29,7 +32,6 @@ class XenditService
                 'api-version'  => config('xendit.api_version', '2024-11-11'),
                 'Content-Type' => 'application/json',
                 'Accept'       => 'application/json',
-                // catatan: header kustom akan diinject per-request / via context
             ])
             ->withBasicAuth((string) config('xendit.api_key'), '')
             ->retry(
@@ -42,10 +44,14 @@ class XenditService
      * Set default context untuk seluruh request berikutnya dari instance ini.
      * Gunakan saat transaksi dilakukan atas nama subaccount + menerapkan split rule.
      */
-    public function setContext(?string $forUserId = null, ?string $splitRuleId = null): static
-    {
+    public function setContext(
+        ?string $forUserId = null,
+        ?string $splitRuleId = null,
+        ?string $idempotencyKey = null
+    ): static {
         $this->defaultForUserId  = $forUserId;
         $this->defaultSplitRuleId = $splitRuleId;
+        $this->defaultIdempotencyKey = $idempotencyKey;
         return $this;
     }
 
@@ -54,13 +60,15 @@ class XenditService
      */
     protected function withOptionalHeaders(
         ?string $forUserId = null,
-        ?string $splitRuleId = null
+        ?string $splitRuleId = null,
+        ?string $idempotencyKey = null
     ): PendingRequest {
         $headers = [];
 
         // pakai override per-request > kalau null jatuh ke default context
         $effectiveForUserId  = $forUserId   ?? $this->defaultForUserId;
         $effectiveSplitRuleId = $splitRuleId ?? $this->defaultSplitRuleId;
+        $effectiveIdempotencyKey = $idempotencyKey ?? $this->defaultIdempotencyKey;
 
         if ($effectiveForUserId) {
             $headers['for-user-id'] = $effectiveForUserId;
@@ -70,6 +78,10 @@ class XenditService
             $headers['with-split-rule'] = $effectiveSplitRuleId;
         }
 
+        if ($effectiveIdempotencyKey) {
+            $headers['Idempotency-Key'] = $effectiveIdempotencyKey;
+        }
+
         return (clone $this->client)->withHeaders($headers);
     }
 
@@ -77,11 +89,12 @@ class XenditService
 
     protected function get(
         string $path,
-        array $query = [],
+        array|string $query = [],
         ?string $forUserId = null,
-        ?string $splitRuleId = null
+        ?string $splitRuleId = null,
+        ?string $idempotencyKey = null
     ): array {
-        $req = $this->withOptionalHeaders($forUserId, $splitRuleId);
+        $req = $this->withOptionalHeaders($forUserId, $splitRuleId, $idempotencyKey);
         return $this->send('GET', $path, $query, [], $req);
     }
 
@@ -89,15 +102,11 @@ class XenditService
         string $path,
         array $payload = [],
         array $query = [],
-        ?string $idempotencyKey = null,
         ?string $forUserId = null,
-        ?string $splitRuleId = null
+        ?string $splitRuleId = null,
+        ?string $idempotencyKey = null,
     ): array {
-        $req = $this->withOptionalHeaders($forUserId, $splitRuleId)
-            ->withHeaders([
-                'Idempotency-Key' => $idempotencyKey ?? Str::uuid()->toString(),
-            ]);
-
+        $req = $this->withOptionalHeaders($forUserId, $splitRuleId, $idempotencyKey);
         return $this->send('POST', $path, $query, $payload, $req);
     }
 
@@ -107,9 +116,10 @@ class XenditService
         array $query = [],
         array $payload = [],
         ?string $forUserId = null,
-        ?string $splitRuleId = null
+        ?string $splitRuleId = null,
+        ?string $idempotencyKey = null
     ): array {
-        $req = $this->withOptionalHeaders($forUserId, $splitRuleId);
+        $req = $this->withOptionalHeaders($forUserId, $splitRuleId, $idempotencyKey);
         return $this->send($method, $path, $query, $payload, $req);
     }
 
@@ -118,18 +128,33 @@ class XenditService
     protected function send(
         string $method,
         string $path,
-        array $query = [],
+        array|string $query = [],
         array $payload = [],
         ?PendingRequest $client = null
     ): array {
         $client     = $client ?: $this->client;
-        $url        = rtrim((string) config('xendit.base_url'), '/') . $path;
+        $base       = rtrim((string) config('xendit.base_url'), '/');
+        $url        = $base . $path;
+
+        // Siapkan request options & header untuk logging
         $headers    = $this->buildEffectiveHeaders($client);
         $bodyForLog = $payload;
         $startedAt  = microtime(true);
 
+        // Bangun URL & query handling:
+        // - Jika $query STRING => tempel ke URL (repeated keys)
+        // - Jika $query ARRAY  => pakai withQueryParameters (akan jadi x[0]=..; umumnya untuk endpoint yang memang support bracket-index)
+        $request = $client;
+        $queryForLog = $query; // agar logging konsisten
+
+        if (is_string($query) && $query !== '') {
+            $url .= (str_contains($url, '?') ? '&' : '?') . $query;
+        } elseif (is_array($query) && !empty($query)) {
+            $request = $request->withQueryParameters($query);
+        }
+
         try {
-            $response = $client->withQueryParameters($query)->send($method, $path, [
+            $response = $request->send($method, $url, [
                 'json' => $payload ?: null,
             ]);
 
@@ -158,7 +183,7 @@ class XenditService
                 'status'     => optional($e->response)->status(),
                 'durationMs' => $durationMs,
                 'headers'    => $this->sanitizeHeaders($headers),
-                'query'      => $query,
+                'query'      => $queryForLog,   // bisa array atau string, logging aman (truncate json_encode)
                 'body'       => $bodyForLog,
                 'error'      => $e->getMessage(),
                 'response'   => $e->response?->json(),
@@ -174,17 +199,18 @@ class XenditService
                 'details' => $body ?? null,
             ]), (int) optional($e->response)->status() ?: 500);
         } finally {
-            // Always log outbound request (best effort, once)
+            // Always log outbound request
             $this->logHttp([
                 'direction' => 'request',
                 'method'    => $method,
                 'url'       => $url,
                 'headers'   => $this->sanitizeHeaders($headers),
-                'query'     => $query,
+                'query'     => $queryForLog,
                 'body'      => $bodyForLog,
             ]);
         }
     }
+
 
     /** -------- Utilities: logging & masking -------- */
 
@@ -302,5 +328,48 @@ class XenditService
         }
 
         return $data;
+    }
+
+    protected function buildQueryString(array $q): string
+    {
+        $pairs = [];
+
+        foreach ($q as $key => $val) {
+            // skip null / kosong
+            if ($val === null || $val === '') continue;
+
+            // kalau array → pakai key[]
+            if (is_array($val)) {
+                foreach ($val as $v) {
+                    if ($v === null || $v === '') continue;
+                    $pairs[] = $this->encodeKey($key, true) . '=' . (string) $v;
+                }
+            } else {
+                // scalar
+                $pairs[] = $this->encodeKey($key) . '=' . (string) $val;
+            }
+        }
+
+        return implode('&', $pairs);
+    }
+
+    /**
+     * Encode key tapi tetap biarkan [] tidak berubah
+     */
+    protected function encodeKey(string $key, bool $forceArray = false): string
+    {
+        if ($forceArray) {
+            // tambahkan [] kalau belum ada
+            if (!str_ends_with($key, '[]')) {
+                $key .= '[]';
+            }
+        }
+
+        // Encode lalu replace %5B dan %5D supaya tetap bracket
+        return preg_replace(
+            ['/%5B/i', '/%5D/i'],
+            ['[', ']'],
+            rawurlencode($key)
+        );
     }
 }
