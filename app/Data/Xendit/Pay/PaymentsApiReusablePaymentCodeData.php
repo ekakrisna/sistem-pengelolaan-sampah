@@ -56,7 +56,7 @@ class PaymentsApiReusablePaymentCodeData extends Data
     {
         return array_filter([
             'reference_id'       => $this->reference_id,
-            'type'               => 'REUSABLE_PAYMENT_CODE', // fixed sesuai spec
+            'type'               => 'REUSABLE_PAYMENT_CODE',
             'country'            => $this->country->value,
             'currency'           => $this->currency->value,
             'request_amount'     => $this->request_amount,

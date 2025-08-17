@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Data\Xendit\Pay\Card;
+namespace App\Data\Xendit\Common\Card;
 
 use Spatie\LaravelData\Data;
 

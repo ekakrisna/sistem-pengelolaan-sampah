@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Customer\PickupController as CustomerPickupContr
 use App\Http\Controllers\Api\V1\Customer\ProfileController;
 use App\Http\Controllers\Api\V1\Customer\TransactionController as CustomerTransactionController;
 use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentRequestController;
+use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentsPayAndSaveController;
 use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentsPayController;
 use App\Http\Controllers\Api\V1\Customer\Xendit\ReusablePaymentCodeController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PaymentController;
@@ -62,16 +63,7 @@ Route::prefix(config('app.api.version'))
                 // Payments
                 // Route::get('payment-channels', [CustomerPaymentController::class, 'channels']);
                 Route::prefix('payments')->name('payments.')->group(function () {
-
-                    Route::prefix('requests')->group(function () {
-                        Route::post('/', [CustomerPaymentController::class, 'store']);
-                        Route::get('/{prId}', [CustomerPaymentController::class, 'show']);
-                    });
-
-                    Route::prefix('methods')->group(function () {
-                        Route::post('/', [PaymentMethodController::class, 'store']);
-                        Route::get('/{pmId}', [PaymentMethodController::class, 'show']);
-                    });
+                    //
                 });
 
                 // Transactions
@@ -96,10 +88,14 @@ Route::prefix(config('app.api.version'))
                         });
 
                         Route::prefix('pay')->name('pay.')->group(function () {
-                            Route::post('card',  [PaymentsPayController::class, 'create_card']);
-                            Route::post('qris',  [PaymentsPayController::class, 'create_qris']);
-                            Route::post('va',    [PaymentsPayController::class, 'create_va']);
-                            Route::post('ewallet', [PaymentsPayController::class, 'create_ewallet']);
+                            Route::post('create-one-off-payment',  [PaymentsPayController::class, 'presentOneOff']);
+                            Route::post('create-with-specific-code',  [PaymentsPayController::class, 'presentOneOffWithSpecificCode']);
+                            Route::post('redirect-with-customer', [PaymentsPayController::class, 'redirectWithCustomer']);
+                            Route::post('redirect-no-customer', [PaymentsPayController::class, 'redirectNoCustomer']);
+                        });
+
+                        Route::prefix('pay-and-save')->name('pay-and-save.')->group(function () {
+                            Route::post('create', [PaymentsPayAndSaveController::class, 'create']);
                         });
                     });
                 });

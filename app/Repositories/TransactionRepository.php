@@ -198,12 +198,4 @@ class TransactionRepository
 
         return $query->paginate($pageSize);
     }
-
-    public function insertItems(int $transactionId, array $rows): void
-    {
-        foreach ($rows as $r) {
-            $r['transaction_id'] = $transactionId;
-            TransactionItem::create($r);
-        }
-    }
 }

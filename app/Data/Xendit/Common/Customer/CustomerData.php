@@ -30,7 +30,7 @@ class CustomerData extends Data
             'email'            => ['nullable', 'email', 'max:255'],
             'mobile_number'    => ['nullable', 'string', 'max:30'],
             'phone_number'     => ['nullable', 'string', 'max:30'],
-            'individual_detail' => ['nullable', 'array'],
+            'individual_detail' => ['required', 'array'],
         ];
     }
 
