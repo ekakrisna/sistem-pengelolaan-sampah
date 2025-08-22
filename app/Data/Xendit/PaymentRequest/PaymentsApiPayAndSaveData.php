@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Data\Xendit\Pay;
+namespace App\Data\Xendit\PaymentRequest;
 
 use App\Data\Xendit\Common\ChannelPropsData;
 use App\Data\Xendit\Common\Customer\CustomerData;

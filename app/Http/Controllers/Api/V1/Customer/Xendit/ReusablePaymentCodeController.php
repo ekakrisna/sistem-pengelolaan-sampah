@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Customer\Xendit;
 
-use App\Data\Xendit\Pay\PaymentsApiReusablePaymentCodeData;
+use App\Data\Xendit\PaymentRequest\PaymentsApiReusablePaymentCodeData;
 use App\Http\Controllers\Controller;
 use App\Services\Xendits\PaymentRequest\ReusablePaymentCodeService;
 use App\Traits\ApiResponse;

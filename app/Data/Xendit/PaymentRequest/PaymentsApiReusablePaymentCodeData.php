@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Data\Xendit\Pay;
+namespace App\Data\Xendit\PaymentRequest;
 
 use App\Data\Xendit\Common\ItemData;
 use App\Enums\Xendit\Common\CaptureMethod;

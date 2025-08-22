@@ -2,7 +2,7 @@
 
 namespace App\Services\Xendits\PaymentRequest;
 
-use App\Data\Xendit\Pay\PaymentsApiReusablePaymentCodeData;
+use App\Data\Xendit\PaymentRequest\PaymentsApiReusablePaymentCodeData;
 use App\Services\Xendits\Http\XenditService;
 
 class ReusablePaymentCodeService extends XenditService

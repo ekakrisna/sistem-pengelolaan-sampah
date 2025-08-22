@@ -34,6 +34,22 @@ class AccountController extends Controller
         }
     }
 
+    public function getAccount(string $id): JsonResponse
+    {
+        try {
+            $data = $this->service->getAccount($id);
+            return $this->successResponse($data);
+        } catch (\Throwable $th) {
+            [$name, $message, $code, $errors] = $this->normalizeXenditException($th);
+            return $this->errorResponse(
+                name: $name,
+                message: $message,
+                statusCode: $code,
+                errors: $errors,
+            );
+        }
+    }
+
     public function createAccount(CreateAccountRequestData $dto): JsonResponse
     {
         try {

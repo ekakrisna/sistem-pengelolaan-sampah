@@ -2,7 +2,6 @@
 
 namespace App\Data\Xendit\Platform\ListAccounts;
 
-use App\Enums\Xendit\Platform\CreateCustomer\Type;
 use App\Enums\Xendit\Platform\ListAccounts\Status;
 use Spatie\LaravelData\Data;
 
@@ -13,9 +12,9 @@ final class ListAccountsQueryData extends Data
      * @param (Status|string)[]|null $status
      */
     public function __construct(
-        public ?string $email = null,   // e.g. ["a@ex.com","b@ex.com"]
-        public ?string $status = null,  // e.g. ["LIVE","REGISTERED"] atau [Status::LIVE, Status::REGISTERED]
-        public ?string $type = null,    // enum tunggal OK (Xendit: MANAGED|OWNED|CUSTOM)
+        public ?string $email = null,
+        public ?string $status = null,
+        public ?string $type = null,
         public ?string $public_profile_business_name = null,
         public ?string $created_gte = null,
         public ?string $created_lte = null,

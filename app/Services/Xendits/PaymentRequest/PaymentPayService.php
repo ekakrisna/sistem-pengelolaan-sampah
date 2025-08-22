@@ -2,7 +2,7 @@
 
 namespace App\Services\Xendits\PaymentRequest;
 
-use App\Data\Xendit\Pay\PaymentsApiPayData;
+use App\Data\Xendit\PaymentRequest\PaymentsApiPayData;
 use App\Services\Xendits\Http\XenditService;
 
 class PaymentPayService extends XenditService

@@ -2,10 +2,19 @@
 
 namespace App\Services\Xendits\PaymentRequest;
 
+use App\Data\Xendit\PaymentRequest\PaymentRequestListQueryData;
 use App\Services\Xendits\Http\XenditService;
 
 class PaymentRequestService extends XenditService
 {
+
+    public function getPaymentRequests(PaymentRequestListQueryData $query): array
+    {
+        $q = $query->toQuery();
+        $qs = $this->buildQueryString($q);
+        return $this->get('/payment_requests', $qs);
+    }
+
     /**
      * Get Payment Request by ID (v3)
      */
@@ -23,17 +32,6 @@ class PaymentRequestService extends XenditService
     public function cancel(string $paymentRequestId): array
     {
         return $this->post("/v3/payment_requests/{$paymentRequestId}/cancel");
-    }
-
-    /**
-     * Get Payment by ID (v3)
-     *
-     * @param string $paymentId ex: py-bb322184-4bae-42ce-bacf-0f84049e046e
-     * @return array
-     */
-    public function getByPaymentId(string $paymentId): array
-    {
-        return $this->get("/v3/payments/{$paymentId}");
     }
 
     /**

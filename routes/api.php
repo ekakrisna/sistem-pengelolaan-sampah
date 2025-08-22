@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Customer\PickupController as CustomerPickupContr
 use App\Http\Controllers\Api\V1\Customer\ProfileController;
 use App\Http\Controllers\Api\V1\Customer\TransactionController as CustomerTransactionController;
 use App\Http\Controllers\Api\V1\Customer\Xendit\AccountController;
+use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentController as XenditPaymentController;
 use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentRequestController;
 use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentsPayAndSaveController;
 use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentsPayController;
@@ -77,14 +78,16 @@ Route::prefix(config('app.api.version'))
 
                     Route::prefix('accounts')->name('accounts.')->group(function () {
                         Route::get('/', [AccountController::class, 'getAccounts']);
+                        Route::get('{id}', [AccountController::class, 'getAccount']);
                         Route::post('create', [AccountController::class, 'createAccount']);
                     });
 
                     Route::prefix('payments')->name('payments.')->group(function () {
-                        Route::get('{id}', [PaymentRequestController::class, 'showByPaymentId']);
+                        Route::get('{id}', [XenditPaymentController::class, 'showByPaymentId']);
                     });
 
                     Route::prefix('payment-requests')->name('payment-requests.')->group(function () {
+                        Route::get('/', [PaymentRequestController::class, 'getPaymentRequests']);
                         Route::get('{id}', [PaymentRequestController::class, 'showById']);
                         Route::post('{id}/cancel', [PaymentRequestController::class, 'cancelPaymentRequest']);
                         Route::post('{id}/simulate', [PaymentRequestController::class, 'simulatePaymentRequest']);

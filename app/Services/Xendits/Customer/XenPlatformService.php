@@ -5,7 +5,6 @@ namespace App\Services\Xendits\Customer;
 use App\Data\Xendit\Platform\CreateAccount\CreateAccountRequestData;
 use App\Data\Xendit\Platform\ListAccounts\ListAccountsQueryData;
 use App\Services\Xendits\Http\XenditService;
-use Illuminate\Support\Arr;
 
 class XenPlatformService extends XenditService
 {
@@ -15,6 +14,12 @@ class XenPlatformService extends XenditService
         $q = $query->toQuery();
         $qs = $this->buildQueryString($q);
         $res = $this->get('/v2/accounts', $qs);
+        return $res;
+    }
+
+    public function getAccount(string $id): array
+    {
+        $res = $this->get("/v2/accounts/{$id}");
         return $res;
     }
 

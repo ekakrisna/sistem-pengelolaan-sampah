@@ -23,6 +23,9 @@ enum ChannelCode: string
     case SHOPEEPAY = 'SHOPEEPAY';
     case LINKAJA = 'LINKAJA';
 
+    case ALFAMART = 'ALFAMART';
+    case INDOMARET = 'INDOMARET';
+
     public static function values(): array
     {
         return array_column(self::cases(), 'value');

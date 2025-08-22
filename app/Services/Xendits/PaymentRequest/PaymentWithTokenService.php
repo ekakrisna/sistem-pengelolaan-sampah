@@ -3,7 +3,7 @@
 namespace App\Services\Xendits\PaymentRequest;
 
 use App\Data\Xendit\Common\PaymentRequestResponseData;
-use App\Data\Xendit\Pay\Token\PayWithPaymentTokenData;
+use App\Data\Xendit\PaymentRequest\Token\PayWithPaymentTokenData;
 use App\Services\Xendits\Http\XenditService;
 
 class PaymentWithTokenService extends XenditService

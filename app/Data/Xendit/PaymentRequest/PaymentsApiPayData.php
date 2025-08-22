@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Data\Xendit\Pay;
+namespace App\Data\Xendit\PaymentRequest;
 
 use App\Data\Xendit\Common\ChannelPropsData;
 use App\Data\Xendit\Common\Customer\CustomerData;
@@ -48,43 +48,57 @@ class PaymentsApiPayData extends Data
         $captureIn  = implode(',', CaptureMethod::values());
         $channelIn  = implode(',', ChannelCode::values());
         $ovo        = ChannelCode::OVO->value;
+        $alfamart   = ChannelCode::ALFAMART->value;
+        $indomaret  = ChannelCode::INDOMARET->value;
+        $cards = ChannelCode::CARDS->value;
         $customerType = implode(',', CustomerType::values());
 
         return [
-            'reference_id'         => ['required', 'string', 'min:1', 'max:255'],
-            'country'              => ['required', "in:$countryIn"],
-            'currency'             => ['required', "in:$currencyIn"],
-            'request_amount'       => ['required', 'numeric', 'min:0'],
+            'reference_id'   => ['required', 'string', 'min:1', 'max:255'],
+            'country'        => ['required', "in:$countryIn"],
+            'currency'       => ['required', "in:$currencyIn"],
+            'request_amount' => ['required', 'numeric', 'min:0'],
 
-            // customer boleh tidak ada
-            'customer'                                     => ['nullable', 'array'],
+            'customer'                               => ['nullable', 'array'],
+            'customer.reference_id'                  => ['required_with:customer', 'string', 'min:1', 'max:255'],
+            'customer.type'                          => ['required_with:customer', 'string', "in:$customerType"],
+            'customer.mobile_number'                 => ['required_with:customer', 'string', 'min:1', 'max:50'],
+            'customer.email'                         => ['nullable', 'email', 'max:255'],
 
-            // jika "customer" ada, semua field di bawahnya jadi wajib
-            'customer.reference_id'                        => ['required_with:customer', 'string', 'min:1', 'max:255'],
-            'customer.type'                                => ['required_with:customer', 'string', "in:$customerType"],
-            'customer.mobile_number'                       => ['required_with:customer', 'string', 'min:1', 'max:50'],
-            'customer.email'                               => ['nullable', 'email', 'max:255'],
+            'customer.individual_detail'             => ['required_with:customer', 'array'],
+            'customer.individual_detail.given_names' => ['required_with:customer.individual_detail', 'string', 'max:50'],
+            'customer.individual_detail.surname'     => ['required_with:customer.individual_detail', 'string', 'max:50'],
 
-            // individual_detail wajib kalau customer ada
-            'customer.individual_detail'                   => ['required_with:customer', 'array'],
-            'customer.individual_detail.given_names'       => ['required_with:customer.individual_detail', 'string', 'max:50'],
-            'customer.individual_detail.surname'           => ['required_with:customer.individual_detail', 'string', 'max:50'],
+            'capture_method'     => ['nullable', "in:$captureIn"],
+            'channel_code'       => ['required', "in:$channelIn"],
+            'channel_properties' => ['required', 'array'],
 
-            'capture_method'       => ['nullable', "in:$captureIn"],
-            'channel_code'         => ['required', "in:$channelIn"],
-            'channel_properties'   => ['required', 'array'],
+            "channel_properties.account_mobile_number" => [
+                "required_if:channel_code,$ovo",
+                'string',
+                'max:20',
+            ],
+            "channel_properties.payer_name" => [
+                "required_if:channel_code,$alfamart,$indomaret",
+                'string',
+                'max:100',
+            ],
+            "channel_properties.card_details" => [
+                "required_if:channel_code,$cards",
+                'array',
+            ],
 
-            "channel_properties.account_mobile_number" => ["required_if:channel_code,$ovo", 'string', 'max:20'],
-
-            'description'          => ['nullable', 'string', 'min:1', 'max:1000'],
-            'metadata'             => ['nullable', 'array'],
-            'items'                => ['nullable', 'array'],
-            'items.*'              => ['array'],
+            'description' => ['nullable', 'string', 'min:1', 'max:1000'],
+            'metadata'    => ['nullable', 'array'],
+            'items'       => ['nullable', 'array'],
+            'items.*'     => ['array'],
         ];
     }
 
+
     public function toPayload(): array
     {
+        // dd($this->channel_properties);
         return array_filter([
             'reference_id'       => $this->reference_id,
             'type'               => 'PAY',
@@ -94,7 +108,7 @@ class PaymentsApiPayData extends Data
             'customer'           => $this->customer?->toArray(),
             'capture_method'     => $this->capture_method?->value ?? CaptureMethod::AUTOMATIC->value,
             'channel_code'       => $this->channel_code->value,
-            'channel_properties' => $this->channel_properties->toArray(), // <- pastikan toArray
+            'channel_properties' => $this->channel_properties->toArray(),
             'description'        => $this->description,
             'metadata'           => $this->metadata,
             'items'              => $this->items?->toArray(),

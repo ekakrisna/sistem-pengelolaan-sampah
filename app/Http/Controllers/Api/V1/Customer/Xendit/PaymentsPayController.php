@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use App\Data\Xendit\Pay\PaymentsApiPayData;
+use App\Data\Xendit\PaymentRequest\PaymentsApiPayData;
 use App\Services\Xendits\PaymentRequest\PaymentPayService;
 
 class PaymentsPayController extends Controller
@@ -24,12 +24,9 @@ class PaymentsPayController extends Controller
     public function presentOneOff(PaymentsApiPayData $dto, Request $request): JsonResponse
     {
         try {
-            // context headers (opsional)
             $forUserId   = $request->header('for-user-id')     ?? $request->query('for_user_id');
             $splitRuleId = $request->header('with-split-rule') ?? $request->query('split_rule_id');
 
-            // kamu bisa setContext(...) sekali untuk instance,
-            // atau langsung kirim via argumen createRaw di bawah
             $this->service->setContext($forUserId, $splitRuleId);
 
             $data = $this->service->payWithPresentToCustomer($dto);
@@ -56,8 +53,6 @@ class PaymentsPayController extends Controller
             $forUserId   = $request->header('for-user-id')     ?? $request->query('for_user_id');
             $splitRuleId = $request->header('with-split-rule') ?? $request->query('split_rule_id');
 
-            // kamu bisa setContext(...) sekali untuk instance,
-            // atau langsung kirim via argumen createRaw di bawah
             $this->service->setContext($forUserId, $splitRuleId);
 
             $data = $this->service->payWithPresentToCustomer($dto);

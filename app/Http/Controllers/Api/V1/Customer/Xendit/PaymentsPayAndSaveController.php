@@ -7,7 +7,7 @@ use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-use App\Data\Xendit\Pay\PaymentsApiPayAndSaveData;
+use App\Data\Xendit\PaymentRequest\PaymentsApiPayAndSaveData;
 use App\Services\Xendits\PaymentRequest\PaymentPayAndSaveService;
 
 class PaymentsPayAndSaveController extends Controller

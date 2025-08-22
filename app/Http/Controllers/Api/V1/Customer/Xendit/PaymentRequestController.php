@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Customer\Xendit;
 
+use App\Data\Xendit\PaymentRequest\PaymentRequestListQueryData;
 use App\Http\Controllers\Controller;
 use App\Services\Xendits\PaymentRequest\PaymentRequestService;
 use App\Traits\ApiResponse;
@@ -16,6 +17,17 @@ class PaymentRequestController extends Controller
         protected PaymentRequestService $paymentRequests
     ) {}
 
+    public function getPaymentRequests(PaymentRequestListQueryData $query): JsonResponse
+    {
+        try {
+            $data = $this->paymentRequests->getPaymentRequests($query);
+            return $this->successResponse($data, 'Payment requests retrieved successfully.');
+        } catch (\Throwable $th) {
+            [$name, $message, $code] = $this->normalizeXenditException($th);
+            return $this->errorResponse(name: $name, message: $message, statusCode: $code);
+        }
+    }
+
     public function showById(Request $request, string $id): JsonResponse
     {
         try {
@@ -29,23 +41,6 @@ class PaymentRequestController extends Controller
             $data = $this->paymentRequests->getById($id);
 
             return $this->successResponse($data, 'Payment request retrieved successfully.');
-        } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
-            return $this->errorResponse(name: $name, message: $message, statusCode: $code);
-        }
-    }
-
-    public function showByPaymentId(Request $request, string $id): JsonResponse
-    {
-        try {
-            $forUserId    = $request->query('for_user_id') ?? $request->header('for-user-id');
-            $splitRuleId  = $request->query('split_rule_id') ?? $request->header('with-split-rule');
-
-            $this->paymentRequests->setContext($forUserId, $splitRuleId);
-
-            $data = $this->paymentRequests->getByPaymentId($id);
-
-            return $this->successResponse($data, 'Payment request (by payment id) retrieved successfully.');
         } catch (\Throwable $th) {
             [$name, $message, $code] = $this->normalizeXenditException($th);
             return $this->errorResponse(name: $name, message: $message, statusCode: $code);
