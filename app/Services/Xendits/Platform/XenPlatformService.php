@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Xendits\Customer;
+namespace App\Services\Xendits\Platform;
 
 use App\Data\Xendit\Platform\CreateAccount\CreateAccountRequestData;
 use App\Data\Xendit\Platform\ListAccounts\ListAccountsQueryData;

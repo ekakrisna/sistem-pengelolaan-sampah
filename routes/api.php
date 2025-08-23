@@ -7,12 +7,12 @@ use App\Http\Controllers\Api\V1\Customer\PaymentMethodController;
 use App\Http\Controllers\Api\V1\Customer\PickupController as CustomerPickupController;
 use App\Http\Controllers\Api\V1\Customer\ProfileController;
 use App\Http\Controllers\Api\V1\Customer\TransactionController as CustomerTransactionController;
-use App\Http\Controllers\Api\V1\Customer\Xendit\AccountController;
-use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentController as XenditPaymentController;
-use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentRequestController;
-use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentsPayAndSaveController;
-use App\Http\Controllers\Api\V1\Customer\Xendit\PaymentsPayController;
-use App\Http\Controllers\Api\V1\Customer\Xendit\ReusablePaymentCodeController;
+use App\Http\Controllers\Api\V1\Xendit\AccountController;
+use App\Http\Controllers\Api\V1\Xendit\PaymentController as XenditPaymentController;
+use App\Http\Controllers\Api\V1\Xendit\PaymentRequestController;
+use App\Http\Controllers\Api\V1\Xendit\PaymentsPayAndSaveController;
+use App\Http\Controllers\Api\V1\Xendit\PaymentsPayController;
+use App\Http\Controllers\Api\V1\Xendit\ReusablePaymentCodeController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PaymentController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupController;
 use App\Http\Controllers\Api\V1\SuperAdmin\PickupFeeController;
@@ -20,6 +20,8 @@ use App\Http\Controllers\Api\V1\SuperAdmin\PickupScheduleController;
 use App\Http\Controllers\Api\V1\SuperAdmin\TransactionController;
 use App\Http\Controllers\Api\V1\SuperAdmin\UserController;
 use App\Http\Controllers\Api\V1\SuperAdmin\WasteTypeController;
+use App\Http\Controllers\Api\V1\Xendit\PaymentChannelController;
+use App\Http\Controllers\Api\V1\Xendit\WebhookController;
 use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -28,6 +30,10 @@ Route::prefix(config('app.api.version'))
     ->group(function () {
         Route::post('/login', [AuthController::class, 'login'])->name('login');
         Route::post('/register', [AuthController::class, 'register'])->name('register');
+
+        Route::prefix('xendit')->name('xendit.')->group(function () {
+            Route::post('webhook', [WebhookController::class, 'handle']);
+        });
 
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -73,40 +79,43 @@ Route::prefix(config('app.api.version'))
                     Route::get('/', [CustomerTransactionController::class, 'index']);
                     Route::get('{id}', [CustomerTransactionController::class, 'show']);
                 });
+            });
 
-                Route::prefix('xendit')->name('xendit.')->group(function () {
+            Route::prefix('xendit')->name('xendit.')->group(function () {
+                Route::prefix('payment-channels')->name('payment-channels.')->group(function () {
+                    Route::get('/', [PaymentChannelController::class, 'index']);
+                });
 
-                    Route::prefix('accounts')->name('accounts.')->group(function () {
-                        Route::get('/', [AccountController::class, 'getAccounts']);
-                        Route::get('{id}', [AccountController::class, 'getAccount']);
-                        Route::post('create', [AccountController::class, 'createAccount']);
+                Route::prefix('accounts')->name('accounts.')->group(function () {
+                    Route::get('/', [AccountController::class, 'getAccounts']);
+                    Route::get('{id}', [AccountController::class, 'getAccount']);
+                    Route::post('create', [AccountController::class, 'createAccount']);
+                });
+
+                Route::prefix('payments')->name('payments.')->group(function () {
+                    Route::get('{id}', [XenditPaymentController::class, 'showByPaymentId']);
+                });
+
+                Route::prefix('payment-requests')->name('payment-requests.')->group(function () {
+                    Route::get('/', [PaymentRequestController::class, 'getPaymentRequests']);
+                    Route::get('{id}', [PaymentRequestController::class, 'showById']);
+                    Route::post('{id}/cancel', [PaymentRequestController::class, 'cancelPaymentRequest']);
+                    Route::post('{id}/simulate', [PaymentRequestController::class, 'simulatePaymentRequest']);
+
+                    Route::prefix('reusable-payment-code')->name('reusable-payment-code.')->group(function () {
+                        Route::post('create', [ReusablePaymentCodeController::class, 'createNoAmount']);
+                        Route::post('create-with-amount', [ReusablePaymentCodeController::class, 'createWithAmount']);
                     });
 
-                    Route::prefix('payments')->name('payments.')->group(function () {
-                        Route::get('{id}', [XenditPaymentController::class, 'showByPaymentId']);
+                    Route::prefix('pay')->name('pay.')->group(function () {
+                        Route::post('create-one-off-payment',  [PaymentsPayController::class, 'presentOneOff']);
+                        Route::post('create-with-specific-code',  [PaymentsPayController::class, 'presentOneOffWithSpecificCode']);
+                        Route::post('redirect-with-customer', [PaymentsPayController::class, 'redirectWithCustomer']);
+                        Route::post('redirect-no-customer', [PaymentsPayController::class, 'redirectNoCustomer']);
                     });
 
-                    Route::prefix('payment-requests')->name('payment-requests.')->group(function () {
-                        Route::get('/', [PaymentRequestController::class, 'getPaymentRequests']);
-                        Route::get('{id}', [PaymentRequestController::class, 'showById']);
-                        Route::post('{id}/cancel', [PaymentRequestController::class, 'cancelPaymentRequest']);
-                        Route::post('{id}/simulate', [PaymentRequestController::class, 'simulatePaymentRequest']);
-
-                        Route::prefix('reusable-payment-code')->name('reusable-payment-code.')->group(function () {
-                            Route::post('create', [ReusablePaymentCodeController::class, 'createNoAmount']);
-                            Route::post('create-with-amount', [ReusablePaymentCodeController::class, 'createWithAmount']);
-                        });
-
-                        Route::prefix('pay')->name('pay.')->group(function () {
-                            Route::post('create-one-off-payment',  [PaymentsPayController::class, 'presentOneOff']);
-                            Route::post('create-with-specific-code',  [PaymentsPayController::class, 'presentOneOffWithSpecificCode']);
-                            Route::post('redirect-with-customer', [PaymentsPayController::class, 'redirectWithCustomer']);
-                            Route::post('redirect-no-customer', [PaymentsPayController::class, 'redirectNoCustomer']);
-                        });
-
-                        Route::prefix('pay-and-save')->name('pay-and-save.')->group(function () {
-                            Route::post('create', [PaymentsPayAndSaveController::class, 'create']);
-                        });
+                    Route::prefix('pay-and-save')->name('pay-and-save.')->group(function () {
+                        Route::post('create', [PaymentsPayAndSaveController::class, 'create']);
                     });
                 });
             });

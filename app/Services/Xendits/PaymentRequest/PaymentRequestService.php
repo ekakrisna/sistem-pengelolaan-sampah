@@ -3,6 +3,7 @@
 namespace App\Services\Xendits\PaymentRequest;
 
 use App\Data\Xendit\PaymentRequest\PaymentRequestListQueryData;
+use App\Data\Xendit\PaymentRequest\PaymentsApiPayData;
 use App\Services\Xendits\Http\XenditService;
 
 class PaymentRequestService extends XenditService
@@ -46,5 +47,17 @@ class PaymentRequestService extends XenditService
         return $this->post("/v3/payment_requests/{$paymentRequestId}/simulate", [
             'amount' => $amount,
         ]);
+    }
+
+    /**
+     * Update Payment Request by ID (v3)
+     *
+     * @param string $paymentRequestId
+     * @param PaymentsApiPayData $data
+     * @return array
+     */
+    public function updatePaymentRequest(string $paymentRequestId, PaymentsApiPayData $data): array
+    {
+        return $this->request('PATCH', "/v3/payment_requests/{$paymentRequestId}", $data->toPayload());
     }
 }

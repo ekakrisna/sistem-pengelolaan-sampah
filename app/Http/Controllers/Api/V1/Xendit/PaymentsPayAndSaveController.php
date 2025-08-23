@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\Customer\Xendit;
+namespace App\Http\Controllers\Api\V1\Xendit;
 
 use App\Http\Controllers\Controller;
 use App\Traits\ApiResponse;

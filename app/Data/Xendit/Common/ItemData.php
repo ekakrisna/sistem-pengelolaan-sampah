@@ -14,7 +14,7 @@ class ItemData extends Data
         public string $name,
         public float $net_unit_amount,
         public int $quantity,
-        public string $category,             // required menurut spec
+        public string $category,
         public ?string $url = null,
         public ?string $image_url = null,
         public ?string $subcategory = null,

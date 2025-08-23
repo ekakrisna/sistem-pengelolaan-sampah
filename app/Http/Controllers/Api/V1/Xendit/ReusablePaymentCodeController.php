@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\Customer\Xendit;
+namespace App\Http\Controllers\Api\V1\Xendit;
 
 use App\Data\Xendit\PaymentRequest\PaymentsApiReusablePaymentCodeData;
 use App\Http\Controllers\Controller;

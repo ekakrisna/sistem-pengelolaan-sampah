@@ -1,14 +1,13 @@
 <?php
 
-namespace App\Http\Controllers\Api\V1\Customer\Xendit;
+namespace App\Http\Controllers\Api\V1\Xendit;
 
 use App\Data\Xendit\Platform\CreateAccount\CreateAccountRequestData;
 use App\Data\Xendit\Platform\ListAccounts\ListAccountsQueryData;
 use App\Http\Controllers\Controller;
-use App\Services\Xendits\Customer\XenPlatformService;
+use App\Services\Xendits\Platform\XenPlatformService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class AccountController extends Controller
 {
