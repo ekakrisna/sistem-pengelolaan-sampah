@@ -51,7 +51,10 @@ class TransactionController extends Controller
         $pickups = $this->transactionService->paginate($filters, $pageSize);
         $data = new TransactionCollection(TransactionData::collect($pickups));
 
-        return $this->successResponse($data, message: 'Transactions retrieved successfully.');
+        return $this->successResponse(
+            $data,
+            message: 'Transactions retrieved successfully.'
+        );
     }
 
     public function show(int $id): TransactionData|JsonResponse
@@ -60,6 +63,17 @@ class TransactionController extends Controller
         return $this->successResponse(
             data: $data,
             message: 'Transaction retrieved successfully.'
+        );
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $data = TransactionData::from($request)->toArray();
+        dd($data);
+        $transaction = $this->transactionService->save($data, $this->user);
+        return $this->successResponse(
+            data: TransactionData::from($transaction),
+            message: 'Transaction created successfully.'
         );
     }
 }

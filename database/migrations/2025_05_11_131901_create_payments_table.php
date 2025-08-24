@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\StatusPaymentEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,16 +15,19 @@ return new class extends Migration
         Schema::create('payments', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('customer_id');
-            $table->decimal('amount', 10, 2); // contoh: 25000.00
-            $table->enum('status', ['pending', 'settling', 'paid', 'failed'])->default('pending');
-            $table->string('payment_method')->nullable(); // contoh: qris, bca_va, gopay, etc
-            $table->string('external_id')->nullable(); // dari xendit
-            $table->string('invoice_url')->nullable(); // dari xendit
-            $table->json('xendit_data')->nullable(); // full payload untuk debugging jika perlu
+            $table->unsignedBigInteger('transaction_id');
+            $table->decimal('amount', 10, 2);
+            $table->enum('status', StatusPaymentEnum::values())
+                ->default(StatusPaymentEnum::PENDING->value);
+            $table->string('payment_method');
+            $table->string('external_id');
+            $table->string('invoice_url')->nullable();
+            $table->json('xendit_data');
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
+            $table->foreign('transaction_id')->references('id')->on('transactions')->onDelete('cascade');
             $table->foreign('customer_id')->references('id')->on('users')->onDelete('cascade');
         });
     }

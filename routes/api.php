@@ -69,15 +69,19 @@ Route::prefix(config('app.api.version'))
                 });
 
                 // Payments
-                // Route::get('payment-channels', [CustomerPaymentController::class, 'channels']);
                 Route::prefix('payments')->name('payments.')->group(function () {
-                    //
+                    Route::get('/', [CustomerPaymentController::class, 'index']);
+                    Route::post('/', [CustomerPaymentController::class, 'store']);
+                    Route::get('{id}', [CustomerPaymentController::class, 'show']);
+                    Route::delete('{id}', [CustomerPaymentController::class, 'cancel']);
                 });
 
                 // Transactions
                 Route::prefix('transactions')->name('transactions.')->group(function () {
                     Route::get('/', [CustomerTransactionController::class, 'index']);
                     Route::get('{id}', [CustomerTransactionController::class, 'show']);
+                    Route::post('/', [CustomerTransactionController::class, 'store']);
+                    Route::delete('{id}', [CustomerTransactionController::class, 'cancel']);
                 });
             });
 

@@ -2,7 +2,10 @@
 
 namespace Database\Factories;
 
+use App\Enums\StatusPaymentEnum;
+use App\Enums\Xendit\Common\ChannelCode;
 use App\Models\Payment;
+use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -15,9 +18,10 @@ class PaymentFactory extends Factory
     {
         return [
             'customer_id' => User::where('role', 'customer')->inRandomOrder()->first()->id ?? 1,
+            'transaction_id' => Transaction::inRandomOrder()->first()->id ?? 1,
             'amount' => $this->faker->randomFloat(2, 5000, 100000),
-            'status' => $this->faker->randomElement(['pending', 'paid', 'failed']),
-            'payment_method' => $this->faker->randomElement(['qris', 'bca_va', 'ovo', 'gopay', 'dana']),
+            'status' => $this->faker->randomElement(StatusPaymentEnum::values()),
+            'payment_method' => $this->faker->randomElement(ChannelCode::values()),
             'external_id' => 'trx-' . now()->format('YmdHis') . '-' . Str::random(6),
             'invoice_url' => $this->faker->url(),
             'xendit_data' => [

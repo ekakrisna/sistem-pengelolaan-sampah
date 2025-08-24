@@ -14,8 +14,8 @@ class Transaction extends Model
 	public $timestamps = true;
 
 	protected $fillable = [
-		'payment_id',
 		'pickup_id',
+		'status',
 		'total',
 		'description',
 		'deleted_at',
@@ -29,7 +29,7 @@ class Transaction extends Model
 
 	public function payment()
 	{
-		return $this->belongsTo(Payment::class);
+		return $this->hasOne(Payment::class);
 	}
 
 	public function pickup()

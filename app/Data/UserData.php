@@ -19,35 +19,39 @@ use Spatie\LaravelData\Attributes\Validation\Email;
 
 class UserData extends Data
 {
-    public ?int $id;
-    #[Max(191)]
-    public string $name;
-    #[Max(191), Unique('users', 'email'), Email]
-    public string $email;
-    #[Max(191)]
-    public ?string $phone;
-    #[Date]
-    public ?Carbon $email_verified_at;
-    #[Max(191)]
-    public ?string $password;
-    #[Enum(UserEnum::class)]
-    public UserEnum $role;
-    public ?int $province_id;
-    public ?int $city_id;
-    public ?int $district_id;
-    public ?int $village_id;
+    public function __construct(
+        public ?int $id,
+        #[Max(191)]
+        public string $name,
+        #[Max(191), Unique('users', 'email'), Email]
+        public string $email,
+        #[Max(191)]
+        public ?string $phone,
+        #[Date]
+        public ?Carbon $email_verified_at,
+        #[Max(191)]
+        public ?string $password,
+        #[Enum(UserEnum::class)]
+        public UserEnum $role,
+        public ?int $province_id,
+        public ?int $city_id,
+        public ?int $district_id,
+        public ?int $village_id,
 
-    public ?string $address_detail;
-    #[Max(100)]
-    public ?string $remember_token;
-    public ?Carbon $created_at;
-    public ?Carbon $updated_at;
+        public ?string $address_detail,
+        #[Max(100)]
+        public ?string $remember_token,
+        public ?Carbon $created_at,
+        public ?Carbon $updated_at,
 
-    public ?Province $province;
-    public ?City $city;
-    public ?District $district;
-    public ?Village $village;
+        public ?Province $province,
+        public ?City $city,
+        public ?District $district,
+        public ?Village $village,
 
-    public ?Collection $customerPickups;
-    public ?Collection $petugasPickups;
+        public ?Collection $customerPickups,
+        public ?Collection $petugasPickups,
+
+        public ?Collection $payments,
+    ) {}
 }

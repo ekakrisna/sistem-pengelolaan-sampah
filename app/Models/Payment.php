@@ -15,6 +15,7 @@ class Payment extends Model
 
 	protected $fillable = [
 		'customer_id',
+		'transaction_id',
 		'amount',
 		'status',
 		'payment_method',
@@ -45,16 +46,6 @@ class Payment extends Model
 
 	public function transaction()
 	{
-		return $this->hasOne(Transaction::class);
-	}
-
-	public function scopePending($query)
-	{
-		return $query->where('status', 'pending');
-	}
-
-	public function scopePaid($query)
-	{
-		return $query->where('status', 'paid');
+		return $this->belongsTo(Transaction::class);
 	}
 }

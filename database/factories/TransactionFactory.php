@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\StatusTransactionEnum;
 use App\Models\Transaction;
 use App\Models\Pickup;
 use App\Models\Payment;
@@ -14,11 +15,10 @@ class TransactionFactory extends Factory
     public function definition(): array
     {
         $pickup = Pickup::inRandomOrder()->first();
-        $payment = Payment::inRandomOrder()->first();
 
         return [
-            'pickup_id' => Pickup::factory(),
-            'payment_id' => Payment::factory(),
+            'pickup_id' => $pickup ? $pickup->id : null,
+            'status' => $this->faker->randomElement(StatusTransactionEnum::values()),
             'total' => $this->faker->randomFloat(2, 10000, 50000),
             'description' => $this->faker->sentence(),
         ];
