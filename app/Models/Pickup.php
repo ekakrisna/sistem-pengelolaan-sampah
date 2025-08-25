@@ -8,9 +8,8 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -24,16 +23,18 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $note
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property string|null $deleted_at
+ * 
+ * @property User|null $user
+ * @property PickupSchedule $pickup_schedule
+ * @property Collection|TransactionItem[] $transaction_items
  *
  * @package App\Models
  */
 class Pickup extends Model
 {
 	use HasFactory, SoftDeletes;
-
 	protected $table = 'pickups';
-
-	public $timestamps = true;
 
 	protected $casts = [
 		'pickup_schedule_id' => 'int',
@@ -46,29 +47,21 @@ class Pickup extends Model
 		'customer_id',
 		'petugas_id',
 		'status',
-		'note',
-		'deleted_at',
-		'created_at',
-		'updated_at',
+		'note'
 	];
 
-	public function schedule(): BelongsTo
-	{
-		return $this->belongsTo(PickupSchedule::class, 'pickup_schedule_id');
-	}
-
-	public function customer(): BelongsTo
-	{
-		return $this->belongsTo(User::class, 'customer_id');
-	}
-
-	public function petugas(): BelongsTo
+	public function user()
 	{
 		return $this->belongsTo(User::class, 'petugas_id');
 	}
 
-	public function transaction(): HasOne
+	public function pickup_schedule()
 	{
-		return $this->hasOne(Transaction::class);
+		return $this->belongsTo(PickupSchedule::class);
+	}
+
+	public function transaction_items()
+	{
+		return $this->hasMany(TransactionItem::class);
 	}
 }

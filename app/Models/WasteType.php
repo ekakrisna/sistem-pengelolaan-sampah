@@ -7,49 +7,54 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Class WasteType
  * 
  * @property int $id
+ * @property int $admin_id
  * @property string $name
  * @property string|null $description
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property string|null $deleted_at
+ * 
+ * @property User $user
+ * @property Collection|PickupFee[] $pickup_fees
+ * @property Collection|PickupSchedule[] $pickup_schedules
  *
  * @package App\Models
  */
 class WasteType extends Model
 {
-	use HasFactory, SoftDeletes;
-
+	use SoftDeletes, HasFactory;
 	protected $table = 'waste_types';
-	protected $primaryKey = 'id';
-	public $timestamps = true;
 
 	protected $casts = [
 		'admin_id' => 'int'
 	];
 
 	protected $fillable = [
-		'name',
-		'description',
 		'admin_id',
-		'deleted_at',
-		'created_at',
-		'updated_at',
+		'name',
+		'description'
 	];
 
-	public function admin()
+	public function user()
 	{
 		return $this->belongsTo(User::class, 'admin_id');
 	}
 
-	public function pickupSchedules(): HasMany
+	public function pickup_fees()
+	{
+		return $this->hasMany(PickupFee::class);
+	}
+
+	public function pickup_schedules()
 	{
 		return $this->hasMany(PickupSchedule::class);
 	}

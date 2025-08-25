@@ -17,13 +17,14 @@ return new class extends Migration
             $table->unsignedBigInteger('waste_type_id');
             $table->unsignedBigInteger('admin_id');
             $table->decimal('amount', 10, 2);
-            $table->string('description')->nullable();
+            $table->text('description')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('village_code')->references('code')->on('villages')->onDelete('cascade');
-            $table->foreign('waste_type_id')->references('id')->on('waste_types')->onDelete('cascade');
-            $table->foreign('admin_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('village_code')->references('code')->on('villages')->cascadeOnDelete();
+            $table->foreign('waste_type_id')->references('id')->on('waste_types')->cascadeOnDelete();
+            $table->foreign('admin_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->index(['village_code', 'waste_type_id']);
         });
     }
 

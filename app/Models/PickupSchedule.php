@@ -8,66 +8,78 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Class PickupSchedule
  * 
  * @property int $id
+ * @property int $admin_id
  * @property int $waste_type_id
- * @property Carbon $date
- * @property string $time_slot
- * @property string|null $location
+ * @property string $day_of_week
+ * @property Carbon $start_pickup_time
+ * @property Carbon $end_pickup_time
+ * @property string $village_code
+ * @property int $quota
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property string|null $deleted_at
+ * 
+ * @property User $user
+ * @property Village $village
+ * @property WasteType $waste_type
+ * @property Collection|Pickup[] $pickups
+ * @property Collection|TransactionItem[] $transaction_items
  *
  * @package App\Models
  */
 class PickupSchedule extends Model
 {
 	use HasFactory, SoftDeletes;
-
 	protected $table = 'pickup_schedules';
-	public $timestamps = true;
 
 	protected $casts = [
-		'waste_type_id' => 'int',
 		'admin_id' => 'int',
-		'date' => 'datetime'
+		'waste_type_id' => 'int',
+		'start_pickup_time' => 'datetime',
+		'end_pickup_time' => 'datetime',
+		'quota' => 'int'
 	];
 
 	protected $fillable = [
-		'waste_type_id',
 		'admin_id',
-		'date',
+		'waste_type_id',
+		'day_of_week',
 		'start_pickup_time',
 		'end_pickup_time',
-		'code_village',
-		'deleted_at',
-		'created_at',
-		'updated_at',
+		'village_code',
+		'quota'
 	];
 
-	public function wasteType(): BelongsTo
-	{
-		return $this->belongsTo(WasteType::class);
-	}
-
-	public function admin(): BelongsTo
+	public function user()
 	{
 		return $this->belongsTo(User::class, 'admin_id');
 	}
 
-	public function pickups(): HasMany
+	public function village()
+	{
+		return $this->belongsTo(Village::class, 'village_code');
+	}
+
+	public function waste_type()
+	{
+		return $this->belongsTo(WasteType::class);
+	}
+
+	public function pickups()
 	{
 		return $this->hasMany(Pickup::class);
 	}
 
-	public function village(): BelongsTo
+	public function transaction_items()
 	{
-		return $this->belongsTo(Village::class, 'code_village', 'code');
+		return $this->hasMany(TransactionItem::class);
 	}
 }

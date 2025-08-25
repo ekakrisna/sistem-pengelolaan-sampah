@@ -1,34 +1,56 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
-use App\Enums\StatusPaymentEnum;
-use App\Enums\Xendit\Common\ChannelCode;
 use App\Models\Payment;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
-class PaymentFactory extends Factory
+/**
+ * @extends Factory<\App\Models\Payment>
+ */
+final class PaymentFactory extends Factory
 {
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
     protected $model = Payment::class;
 
+    /**
+     * Define the model's default state.
+     *
+     * @return array
+     */
     public function definition(): array
     {
         return [
-            'customer_id' => User::where('role', 'customer')->inRandomOrder()->first()->id ?? 1,
-            'transaction_id' => Transaction::inRandomOrder()->first()->id ?? 1,
-            'amount' => $this->faker->randomFloat(2, 5000, 100000),
-            'status' => $this->faker->randomElement(StatusPaymentEnum::values()),
-            'payment_method' => $this->faker->randomElement(ChannelCode::values()),
-            'external_id' => 'trx-' . now()->format('YmdHis') . '-' . Str::random(6),
-            'invoice_url' => $this->faker->url(),
-            'xendit_data' => [
-                'qr_string' => Str::random(20),
-                'expires_at' => now()->addMinutes(30)->toISOString(),
-            ],
-            'paid_at' => $this->faker->boolean ? now() : null,
+            'transaction_id' => Transaction::inRandomOrder()->first()->id,
+            'customer_id' => User::whereNotIn('role', ['admin', 'petugas', 'super_admin'])->inRandomOrder()->first()->id,
+            'amount' => fake()->randomFloat(2, 0, 9999999999),
+            'currency' => fake()->currencyCode,
+            'status' => fake()->randomElement(['initiated', 'awaiting_payment', 'succeeded', 'failed', 'expired', 'canceled', 'refund_pending', 'refunded']),
+            'channel' => fake()->optional()->word,
+            'method_code' => fake()->optional()->word,
+            'reference_id' => fake()->optional()->word,
+            'idempotency_key' => fake()->optional()->word,
+            'xendit_account_id' => fake()->optional()->word,
+            'xendit_payment_request_id' => fake()->optional()->word,
+            'xendit_charge_id' => fake()->optional()->word,
+            'xendit_invoice_id' => fake()->optional()->word,
+            'va_numbers' => fake()->optional()->word,
+            'qris_qr_string' => fake()->optional()->text,
+            'checkout_url' => fake()->optional()->word,
+            'ewallet_info' => fake()->optional()->word,
+            'expires_at' => fake()->optional()->datetime(),
+            'paid_at' => fake()->optional()->datetime(),
+            'failure_code' => fake()->optional()->word,
+            'failure_message' => fake()->optional()->word,
+            'xendit_data' => fake()->optional()->word,
         ];
     }
 }

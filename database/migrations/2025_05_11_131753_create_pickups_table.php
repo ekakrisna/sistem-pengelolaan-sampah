@@ -11,20 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pickups', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('pickup_schedule_id');
-            $table->unsignedBigInteger('customer_id');
-            $table->unsignedBigInteger('petugas_id')->nullable();
+        Schema::create('pickups', function (Blueprint $t) {
+            $t->id();
+            $t->unsignedBigInteger('pickup_schedule_id');
+            $t->unsignedBigInteger('customer_id');
+            $t->unsignedBigInteger('petugas_id')->nullable();
+            $t->enum('status', ['scheduled', 'assigned', 'completed', 'canceled'])->default('scheduled');
+            $t->text('note')->nullable();
+            $t->timestamps();
+            $t->softDeletes();
 
-            $table->enum('status', ['scheduled', 'completed', 'canceled'])->default('scheduled');
-            $table->text('note')->nullable();
-            $table->timestamps();
-            $table->softDeletes();
-
-            $table->foreign('pickup_schedule_id')->references('id')->on('pickup_schedules')->onDelete('cascade');
-            $table->foreign('customer_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('petugas_id')->references('id')->on('users')->onDelete('set null');
+            $t->foreign('pickup_schedule_id')->references('id')->on('pickup_schedules')->cascadeOnDelete();
+            $t->foreign('customer_id')->references('id')->on('users')->cascadeOnDelete();
+            $t->foreign('petugas_id')->references('id')->on('users')->nullOnDelete();
         });
     }
 

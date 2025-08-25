@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             VillagesSeeder::class,
         ]);
         $this->call(UserSeeder::class);
+        $this->call(UserAddressSeeder::class);
         $this->call(WasteTypeSeeder::class);
         $this->call(PickupScheduleSeeder::class);
         $this->call(PickupSeeder::class);

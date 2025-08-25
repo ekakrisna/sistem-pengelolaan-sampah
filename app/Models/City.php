@@ -7,52 +7,49 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Class City
  * 
- * @property int $id
  * @property string $code
  * @property string $province_code
  * @property string $name
  * @property string|null $meta
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * 
+ * @property Province $province
+ * @property Collection|District[] $districts
+ * @property Collection|UserAddress[] $user_addresses
  *
  * @package App\Models
  */
 class City extends Model
 {
 	protected $table = 'cities';
-
-	protected $casts = [
-		'code' => 'int',
-		'province_code' => 'int',
-		'meta' => 'json'
-	];
+	protected $primaryKey = 'code';
+	public $incrementing = false;
 
 	protected $fillable = [
-		'code',
 		'province_code',
 		'name',
 		'meta'
 	];
 
-	public function province(): BelongsTo
+	public function province()
 	{
-		return $this->belongsTo(Province::class, 'province_code', 'code');
+		return $this->belongsTo(Province::class, 'province_code');
 	}
 
-	public function districts(): HasMany
+	public function districts()
 	{
-		return $this->hasMany(District::class, 'city_code', 'code');
+		return $this->hasMany(District::class, 'city_code');
 	}
 
-	public function users(): HasMany
+	public function user_addresses()
 	{
-		return $this->hasMany(User::class);
+		return $this->hasMany(UserAddress::class, 'city_code');
 	}
 }

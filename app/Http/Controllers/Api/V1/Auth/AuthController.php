@@ -16,8 +16,6 @@ class AuthController extends Controller
 {
     use ApiResponse;
 
-    protected array $with = ['province', 'district', 'city', 'village'];
-
     /**
      * Login and issue Sanctum token
      */
@@ -37,7 +35,7 @@ class AuthController extends Controller
 
         return $this->successResponse([
             'token' => $token->plainTextToken,
-            'user'  => $user->load($this->with),
+            'user'  => $user,
         ], 'Login successful');
     }
 
@@ -62,7 +60,7 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         return $this->successResponse([
-            'user' => $request->user()->load($this->with),
+            'user' => $request->user(),
         ]);
     }
 
@@ -85,7 +83,7 @@ class AuthController extends Controller
 
         return $this->successResponse([
             'token' => $token->plainTextToken,
-            'user' => $user->load($this->with),
+            'user' => $user,
         ], 'Registration successful.');
     }
 }

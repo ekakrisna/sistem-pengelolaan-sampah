@@ -7,43 +7,41 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Class Province
  * 
- * @property int $id
  * @property string $code
  * @property string $name
  * @property string|null $meta
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * 
+ * @property Collection|City[] $cities
+ * @property Collection|UserAddress[] $user_addresses
  *
  * @package App\Models
  */
 class Province extends Model
 {
 	protected $table = 'provinces';
-
-	protected $casts = [
-		'code' => 'int',
-		'meta' => 'json'
-	];
+	protected $primaryKey = 'code';
+	public $incrementing = false;
 
 	protected $fillable = [
-		'code',
 		'name',
 		'meta'
 	];
 
-	public function cities(): HasMany
+	public function cities()
 	{
-		return $this->hasMany(City::class, 'province_code', 'code');
+		return $this->hasMany(City::class, 'province_code');
 	}
 
-	public function users(): HasMany
+	public function user_addresses()
 	{
-		return $this->hasMany(User::class);
+		return $this->hasMany(UserAddress::class, 'province_code');
 	}
 }

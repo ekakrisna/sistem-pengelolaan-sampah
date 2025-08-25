@@ -2,11 +2,9 @@
 
 namespace App\Data;
 
-use App\Enums\StatusPaymentEnum;
 use App\Enums\StatusTransactionEnum;
 use App\Models\Payment;
 use App\Models\Pickup;
-use App\Models\Transaction;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Attributes\Validation\Numeric;
 use Spatie\LaravelData\Attributes\Validation\Date;

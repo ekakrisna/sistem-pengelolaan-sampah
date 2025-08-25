@@ -1,26 +1,45 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
-use App\Enums\StatusTransactionEnum;
 use App\Models\Transaction;
-use App\Models\Pickup;
-use App\Models\Payment;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class TransactionFactory extends Factory
+/**
+ * @extends Factory<\App\Models\Transaction>
+ */
+final class TransactionFactory extends Factory
 {
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
     protected $model = Transaction::class;
 
+    /**
+     * Define the model's default state.
+     *
+     * @return array
+     */
     public function definition(): array
     {
-        $pickup = Pickup::inRandomOrder()->first();
-
         return [
-            'pickup_id' => $pickup ? $pickup->id : null,
-            'status' => $this->faker->randomElement(StatusTransactionEnum::values()),
-            'total' => $this->faker->randomFloat(2, 10000, 50000),
-            'description' => $this->faker->sentence(),
+            'customer_id' => User::inRandomOrder()->first()->id,
+            'number' => fake()->optional()->word,
+            'status' => fake()->randomElement(['draft', 'pending', 'paid', 'partially_paid', 'expired', 'canceled', 'refunded']),
+            'subtotal' => fake()->randomFloat(2, 0, 9999999999),
+            'discount_amount' => fake()->randomFloat(2, 0, 9999999999),
+            'tax_amount' => fake()->randomFloat(2, 0, 9999999999),
+            'total' => fake()->randomFloat(2, 0, 9999999999),
+            'currency' => fake()->currencyCode,
+            'due_at' => fake()->optional()->datetime(),
+            'expires_at' => fake()->optional()->datetime(),
+            'description' => fake()->optional()->text,
+            'meta' => fake()->optional()->word,
         ];
     }
 }

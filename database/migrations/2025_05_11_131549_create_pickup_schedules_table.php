@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PickupScheduleEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,18 +14,20 @@ return new class extends Migration
     {
         Schema::create('pickup_schedules', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('waste_type_id');
             $table->unsignedBigInteger('admin_id');
-            $table->enum('day_of_week', ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']);
+            $table->unsignedBigInteger('waste_type_id');
+            $table->enum('day_of_week', PickupScheduleEnum::values());
             $table->time('start_pickup_time');
             $table->time('end_pickup_time');
-            $table->char('code_village', 10);
+            $table->char('village_code', 10);
+            $table->unsignedBigInteger('quota')->default(0);
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreign('admin_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('waste_type_id')->references('id')->on('waste_types')->onDelete('cascade');
-            $table->foreign('code_village')->references('code')->on('villages')->onDelete('cascade');
+            $table->foreign('admin_id')->references('id')->on('users')->cascadeOnDelete();
+            $table->foreign('waste_type_id')->references('id')->on('waste_types')->cascadeOnDelete();
+            $table->foreign('village_code')->references('code')->on('villages')->cascadeOnDelete();
+            $table->index(['village_code', 'waste_type_id', 'day_of_week']);
         });
     }
 
