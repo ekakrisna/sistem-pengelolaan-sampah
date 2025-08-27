@@ -98,4 +98,21 @@ class User extends Authenticatable
 	{
 		return $this->hasMany(WasteType::class, 'admin_id');
 	}
+
+	public function isSuperAdmin(): bool
+	{
+		return $this->role === 'super_admin';
+	}
+	public function isAdmin(): bool
+	{
+		return $this->role === 'admin';
+	}
+	public function isPetugas(): bool
+	{
+		return $this->role === 'petugas';
+	}
+	public function isCustomer(): bool
+	{
+		return $this->role === 'customer';
+	}
 }

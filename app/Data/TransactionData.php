@@ -7,12 +7,14 @@ use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Unique;
 use Spatie\LaravelData\Attributes\Validation\Enum;
 use App\Enums\TransactionEnum;
+use App\Models\User;
 use Spatie\LaravelData\Attributes\Validation\Numeric;
 use Spatie\LaravelData\Attributes\Validation\Date;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Attributes\Validation\Json;
-
+use Spatie\LaravelData\DataCollection;
 
 class TransactionData extends Data
 {
@@ -51,6 +53,10 @@ class TransactionData extends Data
         public ?Carbon $updated_at,
         #[Date]
         public ?Carbon $deleted_at,
+
+        public ?UserData $customer,
+        #[DataCollectionOf(TransactionItemData::class)]
+        public ?DataCollection $transaction_items,
 
     ) {}
 

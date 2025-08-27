@@ -12,4 +12,8 @@ enum PickupScheduleEnum: string
     case saturday = 'saturday';
     case sunday = 'sunday';
 
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
+    }
 }

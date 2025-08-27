@@ -79,6 +79,11 @@ Route::prefix(config('app.api.version'))
                 // Transactions
                 Route::prefix('transactions')->name('transactions.')->group(function () {
                     Route::get('/', [CustomerTransactionController::class, 'index']);
+                    Route::prefix('cart')->name('cart.')->group(function () {
+                        Route::get('/', [CustomerTransactionController::class, 'cart']);
+                        Route::post('/', [CustomerTransactionController::class, 'addItem']);
+                        Route::delete('{itemId}', [CustomerTransactionController::class, 'removeItem']);
+                    });
                     Route::get('{id}', [CustomerTransactionController::class, 'show']);
                     Route::post('/', [CustomerTransactionController::class, 'store']);
                     Route::delete('{id}', [CustomerTransactionController::class, 'cancel']);

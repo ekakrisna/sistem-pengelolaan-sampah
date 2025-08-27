@@ -35,7 +35,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class PickupFee extends Model
 {
 	use HasFactory, SoftDeletes;
-	use SoftDeletes;
 	protected $table = 'pickup_fees';
 
 	protected $casts = [

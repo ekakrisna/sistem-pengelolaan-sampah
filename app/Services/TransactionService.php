@@ -116,4 +116,48 @@ class TransactionService
     {
         return $this->transactionRepository->paginateWithFilters($filters, $pageSize, $user);
     }
+
+    /** ---------------- Cart Helpers ---------------- */
+    public function getDraftCart(int $customerId)
+    {
+        return $this->transactionRepository->getDraftCart($customerId);
+    }
+
+    public function createDraftCart(int $customerId, array $meta = [])
+    {
+        return $this->transactionRepository->createDraftCart($customerId, $meta);
+    }
+
+    public function getOrCreateDraftCart(int $customerId, array $meta = [])
+    {
+        return $this->transactionRepository->getOrCreateDraftCart($customerId, $meta);
+    }
+
+    public function addItemToCart(int $transactionId, array $itemData, int $currentUserId)
+    {
+        DB::beginTransaction();
+        try {
+            $item = $this->transactionRepository->addItemToCart($transactionId, $itemData, $currentUserId);
+            DB::commit();
+            return $item;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            report($e);
+            throw new InvalidArgumentException($e->getMessage());
+        }
+    }
+
+    public function removeItemFromCart(int $transactionId, int $itemId, int $currentUserId)
+    {
+        DB::beginTransaction();
+        try {
+            $deleted = $this->transactionRepository->removeItemFromCart($transactionId, $itemId, $currentUserId);
+            DB::commit();
+            return $deleted;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            report($e);
+            throw new InvalidArgumentException($e->getMessage());
+        }
+    }
 }

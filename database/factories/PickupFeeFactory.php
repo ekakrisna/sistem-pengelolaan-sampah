@@ -33,7 +33,7 @@ final class PickupFeeFactory extends Factory
             'village_code' => Village::inRandomOrder()->first()->code,
             'waste_type_id' => WasteType::inRandomOrder()->first()->id,
             'admin_id' => User::where('role', 'admin')->inRandomOrder()->first()->id,
-            'amount' => fake()->randomFloat(2, 0, 99999999),
+            'amount' => fake()->numberBetween(1, 10) * 1000,
             'description' => fake('id')->optional()->text,
         ];
     }

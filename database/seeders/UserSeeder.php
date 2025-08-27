@@ -44,6 +44,11 @@ class UserSeeder extends Seeder
             'role' => 'petugas',
         ]);
 
+        User::factory()->create([
+            'role' => 'customer',
+            'email' => 'customer@lokabersih.com',
+        ]);
+
         // Buat 20 customer
         User::factory(20)->create([
             'role' => 'customer',
