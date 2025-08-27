@@ -23,7 +23,7 @@ class PaymentRequestController extends Controller
             $data = $this->paymentRequests->getPaymentRequests($query);
             return $this->successResponse($data, 'Payment requests retrieved successfully.');
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(name: $name, message: $message, statusCode: $code);
         }
     }
@@ -42,7 +42,7 @@ class PaymentRequestController extends Controller
 
             return $this->successResponse($data, 'Payment request retrieved successfully.');
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(name: $name, message: $message, statusCode: $code);
         }
     }
@@ -59,7 +59,7 @@ class PaymentRequestController extends Controller
 
             return $this->successResponse($data, 'Payment request canceled successfully.');
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(name: $name, message: $message, statusCode: $code);
         }
     }
@@ -76,7 +76,7 @@ class PaymentRequestController extends Controller
 
             return $this->successResponse($data, 'Payment request simulated successfully.');
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(name: $name, message: $message, statusCode: $code);
         }
     }

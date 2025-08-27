@@ -69,7 +69,6 @@ class TransactionController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = TransactionData::from($request)->toArray();
-        dd($data);
         $transaction = $this->transactionService->save($data, $this->user);
         return $this->successResponse(
             data: TransactionData::from($transaction),

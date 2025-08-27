@@ -79,7 +79,7 @@ class PickupController extends Controller
     public function cancel(int $id): PickupData|JsonResponse
     {
         try {
-            $data = PickupData::from($this->pickupService->update(['status' => PickupEnum::Canceled->value], $id, $this->user));
+            $data = PickupData::from($this->pickupService->update(['status' => PickupEnum::canceled->value], $id, $this->user));
             return $this->successResponse($data, 'Pickup schedule successfully updated.');
         } catch (NotFoundHttpException $e) {
             return $this->errorResponse(

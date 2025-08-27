@@ -33,6 +33,10 @@ class Village extends Model
 	protected $primaryKey = 'code';
 	public $incrementing = false;
 
+	protected $casts = [
+		'meta' => 'json'
+	];
+
 	protected $fillable = [
 		'district_code',
 		'name',

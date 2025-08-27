@@ -4,7 +4,9 @@ namespace App\Enums;
 
 enum PickupEnum: string
 {
-    case Scheduled = 'scheduled';
-    case Completed = 'completed';
-    case Canceled = 'canceled';
+    case scheduled = 'scheduled';
+    case assigned = 'assigned';
+    case completed = 'completed';
+    case canceled = 'canceled';
+
 }

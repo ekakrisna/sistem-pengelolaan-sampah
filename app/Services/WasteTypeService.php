@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\WasteTypeData;
 use App\Repositories\WasteTypeRepository;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -49,26 +50,26 @@ class WasteTypeService
      * Validate wasteTypeRepository data.
      * Store to DB if there are no errors.
      *
-     * @param array $data
+     * @param WasteTypeData $data
      * @return String
      */
-    public function save(array $data)
+    public function save(WasteTypeData $data)
     {
-        return $this->wasteTypeRepository->save($data);
+        return $this->wasteTypeRepository->save($data->toArray());
     }
 
     /**
      * Update wasteTypeRepository data
      * Store to DB if there are no errors.
      *
-     * @param array $data
+     * @param WasteTypeData $data
      * @return String
      */
-    public function update(array $data, int $id)
+    public function update(WasteTypeData $data, int $id)
     {
         DB::beginTransaction();
         try {
-            $wasteTypeRepository = $this->wasteTypeRepository->update($data, $id);
+            $wasteTypeRepository = $this->wasteTypeRepository->update($data->toArray(), $id);
             DB::commit();
             return $wasteTypeRepository;
         } catch (Exception $e) {

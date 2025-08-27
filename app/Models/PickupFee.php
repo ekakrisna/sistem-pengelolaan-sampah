@@ -34,7 +34,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class PickupFee extends Model
 {
-    use HasFactory, SoftDeletes;
+	use HasFactory, SoftDeletes;
 	use SoftDeletes;
 	protected $table = 'pickup_fees';
 
@@ -52,7 +52,7 @@ class PickupFee extends Model
 		'description'
 	];
 
-	public function user()
+	public function admin()
 	{
 		return $this->belongsTo(User::class, 'admin_id');
 	}

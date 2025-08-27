@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\PickupFeeData;
 use App\Models\PickupFee;
 use App\Repositories\PickupFeeRepository;
 use Exception;
@@ -50,26 +51,26 @@ class PickupFeeService
      * Validate pickupFeeRepository data.
      * Store to DB if there are no errors.
      *
-     * @param array $data
+     * @param PickupFeeData $data
      * @return String
      */
-    public function save(array $data)
+    public function save(PickupFeeData $data)
     {
-        return $this->pickupFeeRepository->save($data);
+        return $this->pickupFeeRepository->save($data->toArray());
     }
 
     /**
      * Update pickupFeeRepository data
      * Store to DB if there are no errors.
      *
-     * @param array $data
+     * @param PickupFeeData $data
      * @return String
      */
-    public function update(array $data, int $id)
+    public function update(PickupFeeData $data, int $id)
     {
         DB::beginTransaction();
         try {
-            $pickupFeeRepository = $this->pickupFeeRepository->update($data, $id);
+            $pickupFeeRepository = $this->pickupFeeRepository->update($data->toArray(), $id);
             DB::commit();
             return $pickupFeeRepository;
         } catch (Exception $e) {

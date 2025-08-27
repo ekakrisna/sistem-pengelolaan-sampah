@@ -50,7 +50,12 @@ class Pickup extends Model
 		'note'
 	];
 
-	public function user()
+	public function customer()
+	{
+		return $this->belongsTo(User::class, 'customer_id');
+	}
+
+	public function petugas()
 	{
 		return $this->belongsTo(User::class, 'petugas_id');
 	}

@@ -33,7 +33,7 @@ class PaymentsPayController extends Controller
 
             return $this->successResponse($data, 'PAY (present, one-off) created.');
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,
@@ -59,7 +59,7 @@ class PaymentsPayController extends Controller
 
             return $this->successResponse($data, 'PAY (present, specific code) created.');
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,
@@ -87,7 +87,7 @@ class PaymentsPayController extends Controller
 
             return $this->successResponse($data, 'PAY (redirect, with customer) created.');
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,
@@ -113,7 +113,7 @@ class PaymentsPayController extends Controller
             $data = $this->service->payWithRedirect($dto);
             return $this->successResponse($data, 'PAY (redirect, no customer) created.');
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,

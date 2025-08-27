@@ -30,7 +30,7 @@ class ReusablePaymentCodeController extends Controller
 
             return $this->successResponse($res, 'Reusable payment code created.');
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,
@@ -51,7 +51,7 @@ class ReusablePaymentCodeController extends Controller
 
             return $this->successResponse($data, 'Reusable payment code created (with amount).');
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,

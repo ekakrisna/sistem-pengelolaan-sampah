@@ -5,50 +5,68 @@ namespace App\Data;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Attributes\Validation\Enum;
 use App\Enums\PickupScheduleEnum;
-use App\Models\User;
-use App\Models\Village;
-use App\Models\WasteType;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Date;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Collection;
-use Spatie\LaravelData\Attributes\Validation\After;
-use Spatie\LaravelData\Attributes\Validation\Exists;
-use Spatie\LaravelData\Attributes\Validation\Regex;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Spatie\LaravelData\Attributes\DataCollectionOf;
+use Spatie\LaravelData\DataCollection;
 
 class PickupScheduleData extends Data
 {
-    public ?int $id;
 
-    public int $waste_type_id;
-    #[Enum(PickupScheduleEnum::class)]
-    public PickupScheduleEnum $day_of_week;
+    public function __construct(
 
-    #[Regex('/^\d{2}:\d{2}(:\d{2})?$/')]
-    public string $start_pickup_time;
+        public ?int $id,
+        public int $admin_id,
 
-    #[Regex('/^\d{2}:\d{2}(:\d{2})?$/'), After('start_pickup_time')]
-    public string $end_pickup_time;
+        public int $waste_type_id,
 
-    #[Max(10), Exists('villages', 'code')]
-    public string $code_village;
+        #[Enum(PickupScheduleEnum::class)]
+        public PickupScheduleEnum $day_of_week,
 
-    #[Exists('users', 'id')]
-    public int $admin_id;
+        public string $start_pickup_time,
 
-    #[Date]
-    public ?Carbon $created_at;
-    #[Date]
-    public ?Carbon $updated_at;
+        public string $end_pickup_time,
+        #[Max(10)]
+        public string $village_code,
 
-    #[Date]
-    public ?Carbon $deleted_at;
+        public int $quota,
 
-    public ?WasteType $wasteType;
+        #[Date]
+        public ?Carbon $created_at,
 
-    public ?User $admin;
+        #[Date]
+        public ?Carbon $updated_at,
 
-    public ?Collection $pickups;
+        #[Date]
+        public ?Carbon $deleted_at,
 
-    public ?Village $village;
+        public ?UserData $admin,
+        public ?WasteTypeData $waste_type,
+
+        public ?VillageData $village,
+
+        #[DataCollectionOf(PickupData::class)]
+        public ?DataCollection $pickups,
+
+        #[DataCollectionOf(TransactionItemData::class)]
+        public ?DataCollection $transaction_items,
+    ) {}
+
+    public static function paginatedResponse(LengthAwarePaginator $paginator): array
+    {
+        $items = method_exists($paginator, 'items') ? $paginator->items() : $paginator;
+        return [
+            'pickup_schedules' => self::collect($items),
+            'pagination' => [
+                'total'         => $paginator->total(),
+                'per_page'      => $paginator->perPage(),
+                'current_page'  => $paginator->currentPage(),
+                'last_page'     => $paginator->lastPage(),
+                'from'          => $paginator->firstItem(),
+                'to'            => $paginator->lastItem(),
+            ],
+        ];
+    }
 }

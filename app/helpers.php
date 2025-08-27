@@ -34,8 +34,8 @@ if (!function_exists('successResponse')) {
     }
 }
 
-if (!function_exists('normalizeXenditException')) {
-    function normalizeXenditException(\Throwable $th): array
+if (!function_exists('normalizeException')) {
+    function normalizeException(\Throwable $th): array
     {
         $code = (is_int($th->getCode()) && $th->getCode() >= 400 && $th->getCode() <= 599)
             ? $th->getCode()

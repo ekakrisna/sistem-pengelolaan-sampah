@@ -14,12 +14,12 @@ class PickupRepository
 
     /** @var array<string> */
     protected array $with = [
-        'schedule.village',
-        'schedule.wasteType',
-        'schedule.admin',
-        'customer',
-        'petugas',
-        'transaction',
+        'pickup_schedule.village',
+        'pickup_schedule.waste_type',
+        'pickup_schedule.admin',
+        'transaction_items',
+        'customer.user_addresses',
+        'petugas'
     ];
 
     public function __construct(Pickup $pickup)
@@ -27,10 +27,10 @@ class PickupRepository
         $this->pickup = $pickup;
     }
 
-    protected function isAdmin(?UserData $user): bool
+    protected function isCustomer(?UserData $user): bool
     {
-        $role = $user?->role?->value ?? $user?->role?->name ?? null;
-        return in_array($role, [UserEnum::Admin->value, UserEnum::SuperAdmin->value], true);
+        $role = $user?->role?->value ?? null;
+        return $role === UserEnum::customer->value;
     }
 
     /**
@@ -85,19 +85,12 @@ class PickupRepository
      */
     public function save(array $data, ?UserData $user = null): Pickup
     {
-        if ($this->isAdmin($user)) {
-            if (empty($data['customer_id'])) {
-                throw new \InvalidArgumentException('customer_id is required for admin.');
-            }
-        } else {
+        if ($user) {
             unset($data['customer_id'], $data['petugas_id']);
-
-            if ($user?->role?->value === UserEnum::Customer->value) {
+            if ($user->role->value === UserEnum::customer->value) {
                 $data['customer_id'] = $user->id;
-            } elseif ($user?->role?->value === UserEnum::Petugas->value) {
+            } elseif ($user->role->value === UserEnum::petugas->value) {
                 $data['petugas_id'] = $user->id;
-            } else {
-                abort(403, 'Unauthorized');
             }
         }
 
@@ -118,9 +111,9 @@ class PickupRepository
 
         if ($user) {
             unset($data['customer_id'], $data['petugas_id']);
-            if ($user->role->value === UserEnum::Customer->value) {
+            if ($user->role->value === UserEnum::customer->value) {
                 $data['customer_id'] = $user->id;
-            } elseif ($user->role->value === UserEnum::Petugas->value) {
+            } elseif ($user->role->value === UserEnum::petugas->value) {
                 $data['petugas_id'] = $user->id;
             }
         }
@@ -164,7 +157,7 @@ class PickupRepository
 
         // Search by village
         if (!empty($filters['village'])) {
-            $query->whereHas('schedule.village', function ($q) use ($filters) {
+            $query->whereHas('pickup_schedule.village', function ($q) use ($filters) {
                 $q->where('name', 'like', '%' . $filters['village'] . '%');
             });
         }
@@ -172,16 +165,16 @@ class PickupRepository
         // Search by waste type
         if (!empty($filters['waste_type'])) {
             $qf = '%' . $filters['waste_type'] . '%';
-            $query->whereHas('schedule.wasteType', function ($q) use ($qf) {
+            $query->whereHas('pickup_schedule.waste_type', function ($q) use ($qf) {
                 $q->where('name', 'like', $qf)
                     ->orWhere('description', 'like', $qf);
             });
         }
 
-        // Filter by admin (relasi schedule.admin)
+        // Filter by admin (relasi pickup_schedule.admin)
         if (!empty($filters['admin'])) {
             $qf = '%' . $filters['admin'] . '%';
-            $query->whereHas('schedule.admin', function ($q) use ($qf) {
+            $query->whereHas('pickup_schedule.admin', function ($q) use ($qf) {
                 $q->where('name', 'like', $qf)
                     ->orWhere('email', 'like', $qf)
                     ->orWhere('phone', 'like', $qf);

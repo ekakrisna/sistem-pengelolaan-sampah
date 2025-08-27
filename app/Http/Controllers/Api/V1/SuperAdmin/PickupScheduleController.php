@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Api\V1\SuperAdmin;
 
 use App\Data\PickupScheduleData;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PickupScheduleRequest;
 use App\Http\Resources\PickupSchedule\PickupScheduleCollection;
+use App\Models\Pickup;
 use App\Services\PickupScheduleService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -45,21 +47,24 @@ class PickupScheduleController extends Controller
         ]);
         $pageSize = (int) $request->input('page_size', 10);
         $pickupScheduleService = $this->pickupScheduleService->paginate($filters, $pageSize);
-        $data = new PickupScheduleCollection(PickupScheduleData::collect($pickupScheduleService));
+        $data = PickupScheduleData::paginatedResponse($pickupScheduleService);
         return $this->successResponse($data, message: 'Pickup schedule retrieved successfully.');
     }
 
-    public function store(PickupScheduleData $data): PickupScheduleData|JsonResponse
+    public function store(PickupScheduleRequest $request): PickupScheduleData|JsonResponse
     {
         try {
-            $data = PickupScheduleData::from($this->pickupScheduleService->save($data->all()));
+            $payload = PickupScheduleData::from($request->validated());
+            $data = PickupScheduleData::from($this->pickupScheduleService->save($payload));
             return $this->successResponse($data, 'Pickup schedule successfully created.');
         } catch (\Exception $exception) {
             report($exception);
+            [$name, $message, $code, $errors] = $this->normalizeException($exception);
             return $this->errorResponse(
-                "Error::InternalServerError",
-                $exception->getMessage(),
-                statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
+                $name,
+                $message,
+                statusCode: $code,
+                errors: $errors
             );
         }
     }
@@ -73,17 +78,21 @@ class PickupScheduleController extends Controller
         );
     }
 
-    public function update(PickupScheduleData $data, int $id): PickupScheduleData|JsonResponse
+    public function update(PickupScheduleRequest $request, int $id): PickupScheduleData|JsonResponse
     {
         try {
-            $data = PickupScheduleData::from($this->pickupScheduleService->update($data->all(), $id));
+            $payload = PickupScheduleData::from($request->validated());
+            $data = PickupScheduleData::from($this->pickupScheduleService
+                ->update($payload, $id));
             return $this->successResponse($data, 'Pickup schedule successfully updated.');
         } catch (\Exception $exception) {
             report($exception);
+            [$name, $message, $code, $errors] = $this->normalizeException($exception);
             return $this->errorResponse(
-                "Error::InternalServerError",
-                $exception->getMessage(),
-                statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
+                $name,
+                $message,
+                statusCode: $code,
+                errors: $errors
             );
         }
     }
@@ -95,10 +104,12 @@ class PickupScheduleController extends Controller
             return $this->successResponse(null, 'Pickup schedule successfully deleted.');
         } catch (\Exception $exception) {
             report($exception);
+            [$name, $message, $code, $errors] = $this->normalizeException($exception);
             return $this->errorResponse(
-                "Error::InternalServerError",
-                $exception->getMessage(),
-                statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
+                $name,
+                $message,
+                statusCode: $code,
+                errors: $errors
             );
         }
     }

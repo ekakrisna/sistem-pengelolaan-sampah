@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Api\V1\SuperAdmin;
 
 use App\Data\PickupFeeData;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\PickupFeeRequest;
 use App\Http\Resources\PickupFee\PickupFeeCollection;
+use App\Models\Pickup;
+use App\Models\PickupFee;
 use App\Services\PickupFeeService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -41,14 +44,15 @@ class PickupFeeController extends Controller
         ]);
         $pageSize = (int) $request->input('page_size', 10);
         $pickupFee = $this->pickupFeeService->paginate($filters, $pageSize);
-        $data = new PickupFeeCollection(PickupFeeData::collect($pickupFee));
+        $data = PickupFeeData::paginatedResponse($pickupFee);
         return $this->successResponse($data, message: 'Pickup fees retrieved successfully.');
     }
 
-    public function store(PickupFeeData $data): PickupFeeData|JsonResponse
+    public function store(PickupFeeRequest $request): PickupFeeData|JsonResponse
     {
         try {
-            $data = PickupFeeData::from($this->pickupFeeService->save($data->all()));
+            $payload = PickupFeeData::from($request->validated());
+            $data = PickupFeeData::from($this->pickupFeeService->save($payload));
             return $this->successResponse($data, 'Pickup fee successfully created.');
         } catch (\Exception $exception) {
             report($exception);
@@ -69,10 +73,11 @@ class PickupFeeController extends Controller
         );
     }
 
-    public function update(PickupFeeData $data, int $id): PickupFeeData|JsonResponse
+    public function update(PickupFeeRequest $request, int $id): PickupFeeData|JsonResponse
     {
         try {
-            $data = PickupFeeData::from($this->pickupFeeService->update($data->all(), $id));
+            $payload = PickupFeeData::from($request->validated());
+            $data = PickupFeeData::from($this->pickupFeeService->update($payload, $id));
             return $this->successResponse($data, 'Pickup fee successfully updated.');
         } catch (\Exception $exception) {
             report($exception);

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\UserData;
 use App\Repositories\UserRepository;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -49,26 +50,26 @@ class UserService
      * Validate userRepository data.
      * Store to DB if there are no errors.
      *
-     * @param array $data
+     * @param UserData $data
      * @return String
      */
-    public function save(array $data)
+    public function save(UserData $data)
     {
-        return $this->userRepository->save($data);
+        return $this->userRepository->save($data->toArray());
     }
 
     /**
      * Update userRepository data
      * Store to DB if there are no errors.
      *
-     * @param array $data
+     * @param UserData $data
      * @return String
      */
-    public function update(array $data, int $id)
+    public function update(UserData $data, int $id)
     {
         DB::beginTransaction();
         try {
-            $userRepository = $this->userRepository->update($data, $id);
+            $userRepository = $this->userRepository->update($data->toArray(), $id);
             DB::commit();
             return $userRepository;
         } catch (Exception $e) {

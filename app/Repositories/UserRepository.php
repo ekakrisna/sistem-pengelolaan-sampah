@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use App\Data\UserData;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
@@ -11,7 +12,7 @@ class UserRepository
      * @var User
      */
     protected User $user;
-    protected array $with = ['province', 'district', 'city', 'village'];
+    protected array $with = ['user_addresses', 'payments'];
     /**
      * User constructor.
      *
@@ -84,7 +85,7 @@ class UserRepository
      */
     public function delete(int $id)
     {
-        $user = $this->user->find($id);
+        $user = $this->user->findOrFail($id);
         $user->delete();
         return $user;
     }

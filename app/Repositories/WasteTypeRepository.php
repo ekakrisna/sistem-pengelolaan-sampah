@@ -10,7 +10,7 @@ class WasteTypeRepository
      * @var WasteType
      */
     protected WasteType $wasteType;
-    protected array $with = ['admin'];
+    protected array $with = ['user', 'pickup_fees', 'pickup_schedules'];
 
     /**
      * WasteType constructor.
@@ -88,7 +88,7 @@ class WasteTypeRepository
 
         // Search admin name
         if (!empty($filters['admin'])) {
-            $query->whereHas('admin', function ($q) use ($filters) {
+            $query->whereHas('user', function ($q) use ($filters) {
                 $q->where('name', 'like', "%{$filters['admin']}%")
                     ->orWhere('email', 'like', "%{$filters['admin']}%")
                     ->orWhere('phone', 'like', "%{$filters['admin']}%");

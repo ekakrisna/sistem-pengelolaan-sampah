@@ -30,7 +30,7 @@ final class UserFactory extends Factory
         return [
             'name' => fake()->name,
             'email' => fake()->safeEmail,
-            'phone' => fake()->optional()->phoneNumber,
+            'phone' => fake()->phoneNumber,
             'email_verified_at' => fake()->optional()->datetime(),
             'password' => bcrypt('password'),
             'role' => fake()->randomElement(['admin', 'petugas', 'customer', 'super_admin']),

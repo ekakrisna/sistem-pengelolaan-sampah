@@ -38,6 +38,10 @@ class District extends Model
 		'meta'
 	];
 
+	protected $casts = [
+		'meta' => 'json'
+	];
+
 	public function city()
 	{
 		return $this->belongsTo(City::class, 'city_code');

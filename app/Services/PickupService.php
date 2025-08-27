@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\PickupData;
 use App\Data\UserData;
 use App\Repositories\PickupRepository;
 use Exception;
@@ -52,29 +53,29 @@ class PickupService
      * Validate pickupRepository data.
      * Store to DB if there are no errors.
      *
-     * @param array $data
+     * @param PickupData $data
      * @param UserData $user
      * @return String
      */
-    public function save(array $data, ?UserData $user = null)
+    public function save(PickupData $data, ?UserData $user = null)
     {
-        return $this->pickupRepository->save($data, $user);
+        return $this->pickupRepository->save($data->toArray(), $user);
     }
 
     /**
      * Update pickupRepository data
      * Store to DB if there are no errors.
      *
-     * @param array $data
+     * @param PickupData $data
      * @param $id
      * @param UserData $user
      * @return String
      */
-    public function update(array $data, int $id, ?UserData $user = null)
+    public function update(PickupData $data, int $id, ?UserData $user = null)
     {
         DB::beginTransaction();
         try {
-            $pickupRepository = $this->pickupRepository->update($data, $id, $user);
+            $pickupRepository = $this->pickupRepository->update($data->toArray(), $id, $user);
             DB::commit();
             return $pickupRepository;
         } catch (ModelNotFoundException $e) {

@@ -87,7 +87,7 @@ class Payment extends Model
 		'xendit_data'
 	];
 
-	public function user()
+	public function customer()
 	{
 		return $this->belongsTo(User::class, 'customer_id');
 	}

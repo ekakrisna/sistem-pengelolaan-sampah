@@ -58,7 +58,7 @@ class PickupSchedule extends Model
 		'quota'
 	];
 
-	public function user()
+	public function admin()
 	{
 		return $this->belongsTo(User::class, 'admin_id');
 	}

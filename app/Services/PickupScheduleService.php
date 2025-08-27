@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Data\PickupScheduleData;
 use App\Models\PickupSchedule;
 use App\Repositories\PickupScheduleRepository;
 use Exception;
@@ -50,26 +51,27 @@ class PickupScheduleService
      * Validate pickupScheduleRepository data.
      * Store to DB if there are no errors.
      *
-     * @param array $data
+     * @param PickupScheduleData $data
      * @return String
      */
-    public function save(array $data)
+    public function save(PickupScheduleData $data)
     {
-        return $this->pickupScheduleRepository->save($data);
+        return $this->pickupScheduleRepository->save($data->toArray());
     }
 
     /**
      * Update pickupScheduleRepository data
      * Store to DB if there are no errors.
      *
-     * @param array $data
+     * @param PickupScheduleData $data
      * @return String
      */
-    public function update(array $data, int $id)
+    public function update(PickupScheduleData $data, int $id)
     {
         DB::beginTransaction();
         try {
-            $pickupScheduleRepository = $this->pickupScheduleRepository->update($data, $id);
+            $pickupScheduleRepository = $this->pickupScheduleRepository
+                ->update($data->toArray(), $id);
             DB::commit();
             return $pickupScheduleRepository;
         } catch (Exception $e) {

@@ -9,49 +9,58 @@ use Spatie\LaravelData\Attributes\Validation\Date;
 use Carbon\Carbon;
 use Spatie\LaravelData\Attributes\Validation\Enum;
 use App\Enums\UserEnum;
-use App\Models\City;
-use App\Models\District;
-use App\Models\Pickup;
-use App\Models\Province;
-use App\Models\Village;
-use Illuminate\Database\Eloquent\Collection;
-use Spatie\LaravelData\Attributes\Validation\Email;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Spatie\LaravelData\Attributes\DataCollectionOf;
+use Spatie\LaravelData\Attributes\Hidden;
+use Spatie\LaravelData\DataCollection;
 
 class UserData extends Data
 {
     public function __construct(
+        #[Unique('users', 'id')]
         public ?int $id,
         #[Max(191)]
         public string $name,
-        #[Max(191), Unique('users', 'email'), Email]
+        #[Max(191)]
         public string $email,
         #[Max(191)]
         public ?string $phone,
         #[Date]
         public ?Carbon $email_verified_at,
-        #[Max(191)]
+        #[Hidden]
         public ?string $password,
+
         #[Enum(UserEnum::class)]
         public UserEnum $role,
-        public ?int $province_id,
-        public ?int $city_id,
-        public ?int $district_id,
-        public ?int $village_id,
-
-        public ?string $address_detail,
-        #[Max(100)]
+        #[Hidden]
         public ?string $remember_token,
+        #[Date]
         public ?Carbon $created_at,
+        #[Date]
         public ?Carbon $updated_at,
+        #[Date]
+        public ?Carbon $deleted_at,
 
-        public ?Province $province,
-        public ?City $city,
-        public ?District $district,
-        public ?Village $village,
-
-        public ?Collection $customerPickups,
-        public ?Collection $petugasPickups,
-
-        public ?Collection $payments,
+        #[DataCollectionOf(PaymentData::class)]
+        public ?DataCollection $payments,
+        #[DataCollectionOf(UserAddressData::class)]
+        public ?DataCollection $user_addresses,
     ) {}
+
+
+    public static function paginatedResponse(LengthAwarePaginator $paginator): array
+    {
+        $items = method_exists($paginator, 'items') ? $paginator->items() : $paginator;
+        return [
+            'users' => self::collect($items),
+            'pagination' => [
+                'total'         => $paginator->total(),
+                'per_page'      => $paginator->perPage(),
+                'current_page'  => $paginator->currentPage(),
+                'last_page'     => $paginator->lastPage(),
+                'from'          => $paginator->firstItem(),
+                'to'            => $paginator->lastItem(),
+            ],
+        ];
+    }
 }

@@ -51,7 +51,7 @@ class PaymentController extends Controller
                 message: "Payments retrieved successfully."
             );
         } catch (\Throwable $th) {
-            [$name, $message, $code, $errors] = $this->normalizeXenditException($th);
+            [$name, $message, $code, $errors] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,
@@ -71,7 +71,7 @@ class PaymentController extends Controller
                 message: "Payment retrieved successfully."
             );
         } catch (\Throwable $th) {
-            [$name, $message, $code, $errors] = $this->normalizeXenditException($th);
+            [$name, $message, $code, $errors] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,

@@ -38,6 +38,10 @@ class City extends Model
 		'meta'
 	];
 
+	protected $casts = [
+		'meta' => 'json'
+	];
+
 	public function province()
 	{
 		return $this->belongsTo(Province::class, 'province_code');

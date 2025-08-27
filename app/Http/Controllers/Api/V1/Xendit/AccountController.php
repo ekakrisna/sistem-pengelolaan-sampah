@@ -23,7 +23,7 @@ class AccountController extends Controller
             $data = $this->service->getAccounts($request);
             return $this->successResponse($data);
         } catch (\Throwable $th) {
-            [$name, $message, $code, $errors] = $this->normalizeXenditException($th);
+            [$name, $message, $code, $errors] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,
@@ -39,7 +39,7 @@ class AccountController extends Controller
             $data = $this->service->getAccount($id);
             return $this->successResponse($data);
         } catch (\Throwable $th) {
-            [$name, $message, $code, $errors] = $this->normalizeXenditException($th);
+            [$name, $message, $code, $errors] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,
@@ -55,7 +55,7 @@ class AccountController extends Controller
             $data = $this->service->createAccount($dto);
             return $this->successResponse($data, 'Account created successfully.');
         } catch (\Throwable $th) {
-            [$name, $message, $code, $errors] = $this->normalizeXenditException($th);
+            [$name, $message, $code, $errors] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,

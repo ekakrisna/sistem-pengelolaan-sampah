@@ -4,12 +4,11 @@ namespace App\Http\Controllers\Api\V1\SuperAdmin;
 
 use App\Data\PickupData;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\Pickup\PickupCollection;
+use App\Http\Requests\PickupRequest;
 use App\Services\PickupService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class PickupController extends Controller
 {
@@ -44,21 +43,24 @@ class PickupController extends Controller
         ]);
         $pageSize = (int) $request->input('page_size', 10);
         $pickups = $this->pickupService->paginate($filters, $pageSize);
-        $data = new PickupCollection(PickupData::collect($pickups));
+        $data = PickupData::paginatedResponse($pickups);
         return $this->successResponse($data, message: 'Pickups retrieved successfully.');
     }
 
-    public function store(PickupData $data): PickupData|JsonResponse
+    public function store(PickupRequest $request): PickupData|JsonResponse
     {
         try {
-            $data = PickupData::from($this->pickupService->save($data->all()));
+            $payload = PickupData::from($request->validated());
+            $data = PickupData::from($this->pickupService->save($payload));
             return $this->successResponse($data, 'Pickup successfully created.');
         } catch (\Exception $exception) {
             report($exception);
+            [$name, $message, $code, $errors] = $this->normalizeException($exception);
             return $this->errorResponse(
-                "Error::InternalServerError",
-                $exception->getMessage(),
-                statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
+                $name,
+                $message,
+                statusCode: $code,
+                errors: $errors
             );
         }
     }
@@ -72,17 +74,20 @@ class PickupController extends Controller
         );
     }
 
-    public function update(PickupData $data, int $id): PickupData|JsonResponse
+    public function update(PickupRequest $request, int $id): PickupData|JsonResponse
     {
         try {
-            $data = PickupData::from($this->pickupService->update($data->all(), $id));
+            $payload = PickupData::from($request->validated());
+            $data = PickupData::from($this->pickupService->update($payload, $id));
             return $this->successResponse($data, 'Pickup schedule successfully updated.');
         } catch (\Exception $exception) {
             report($exception);
+            [$name, $message, $code, $errors] = $this->normalizeException($exception);
             return $this->errorResponse(
-                "Error::InternalServerError",
-                $exception->getMessage(),
-                statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
+                $name,
+                $message,
+                statusCode: $code,
+                errors: $errors
             );
         }
     }
@@ -94,10 +99,12 @@ class PickupController extends Controller
             return $this->successResponse(null, 'Pickup successfully deleted.');
         } catch (\Exception $exception) {
             report($exception);
+            [$name, $message, $code, $errors] = $this->normalizeException($exception);
             return $this->errorResponse(
-                "Error::InternalServerError",
-                $exception->getMessage(),
-                statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
+                $name,
+                $message,
+                statusCode: $code,
+                errors: $errors
             );
         }
     }

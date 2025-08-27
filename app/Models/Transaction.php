@@ -69,7 +69,7 @@ class Transaction extends Model
 		'meta'
 	];
 
-	public function user()
+	public function customer()
 	{
 		return $this->belongsTo(User::class, 'customer_id');
 	}

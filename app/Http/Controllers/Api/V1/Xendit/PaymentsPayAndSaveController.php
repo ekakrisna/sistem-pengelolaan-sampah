@@ -30,7 +30,7 @@ class PaymentsPayAndSaveController extends Controller
 
             return $this->successResponse($data, 'PAY_AND_SAVE created.');
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,

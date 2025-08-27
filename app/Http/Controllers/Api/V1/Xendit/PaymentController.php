@@ -29,7 +29,7 @@ class PaymentController extends Controller
 
             return $this->successResponse($data, 'Payment request (by payment id) retrieved successfully.');
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(name: $name, message: $message, statusCode: $code);
         }
     }

@@ -30,7 +30,7 @@ class PaymentChannelController extends Controller
                 'Payment channels retrieved successfully.'
             );
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,

@@ -14,13 +14,9 @@ class TransactionRepository
      */
     protected Transaction $transaction;
     protected array $with = [
-        'pickup.schedule.village',
-        'pickup.schedule.wasteType',
-        'pickup.schedule.admin',
-        'pickup.customer',
-        'pickup.petugas',
-        'payment.customer',
-        'items',
+        'payments',
+        'customer',
+        'transaction_items',
     ];
 
     /**

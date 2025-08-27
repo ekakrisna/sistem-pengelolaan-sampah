@@ -10,7 +10,7 @@ class PickupScheduleRepository
      * @var PickupSchedule
      */
     protected PickupSchedule $pickupSchedule;
-    protected array $with = ['wasteType', 'pickups', 'admin', 'village'];
+    protected array $with = ['waste_type', 'pickups', 'admin', 'village', 'transaction_items'];
 
     /**
      * PickupSchedule constructor.
@@ -100,7 +100,7 @@ class PickupScheduleRepository
 
         // Search by waste type
         if (!empty($filters['waste_type'])) {
-            $query->whereHas('wasteType', function ($q) use ($filters) {
+            $query->whereHas('waste_type', function ($q) use ($filters) {
                 $q->where('name', 'like', '%' . $filters['waste_type'] . '%')
                     ->orWhere('description', 'like', '%' . $filters['waste_type'] . '%');
             });

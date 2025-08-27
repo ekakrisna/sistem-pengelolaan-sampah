@@ -29,7 +29,7 @@ class WebhookController extends Controller
             });
             return $this->successResponse($result, 'Webhook processed.');
         } catch (\Throwable $th) {
-            [$name, $message, $code] = $this->normalizeXenditException($th);
+            [$name, $message, $code] = $this->normalizeException($th);
             return $this->errorResponse(
                 name: $name,
                 message: $message,
