@@ -91,8 +91,11 @@ class PaymentController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $this->paymentService->deleteById($id);
-            return $this->successResponse(null, 'Pickup successfully deleted.');
+            $deleted = $this->paymentService->deleteById($id);
+            return $this->successResponse(
+                ['deleted' => (bool) $deleted],
+                'Payment successfully deleted.'
+            );
         } catch (\Exception $exception) {
             report($exception);
             return $this->errorResponse(

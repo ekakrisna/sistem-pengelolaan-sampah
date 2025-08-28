@@ -6,10 +6,7 @@ use App\Data\TransactionData;
 use App\Data\UserData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CartRequest;
-use App\Http\Requests\TransactionRequest;
 use App\Http\Resources\Transaction\TransactionCollection;
-use App\Models\Transaction;
-use App\Models\UserAddress;
 use App\Services\TransactionService;
 use App\Traits\ApiResponse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -38,7 +35,7 @@ class TransactionController extends Controller
         Request $request
     ) {
         $this->transactionService = $transactionService;
-        $this->user = UserData::from($request->user());
+        $this->user = $request->user() ? UserData::from($request->user()) : null;
     }
 
     public function index(Request $request): JsonResponse
@@ -101,10 +98,30 @@ class TransactionController extends Controller
     public function addItem(CartRequest $request): JsonResponse
     {
         try {
-            $uid = $this->user->id ?? null;
+            $uid   = $this->user->id;
             $trxId = $request->integer('transaction_id');
 
-            $request->validated();
+            // Auto get-or-create cart kalau transaction_id tidak dikirim
+            if (!$trxId) {
+                $cart = $this->transactionService->getOrCreateDraftCart($uid);
+                $trxId = $cart->id;
+            }
+
+            // Ambil transaksi (role-aware) & authorize penambahan item
+            $trx = $this->transactionService->getById($trxId, $this->user);
+            $this->authorize('addItem', $trx);
+
+            // Pastikan alamat milik user (defense-in-depth)
+            if ($request->filled('user_address_id')) {
+                abort_unless(
+                    \App\Models\UserAddress::where('id', $request->integer('user_address_id'))
+                        ->where('user_id', $uid)->exists(),
+                    403,
+                    'Address not owned by you.'
+                );
+            }
+
+            // Payload (unit_amount boleh tidak disertakan; repo akan force dari pickup_fees untuk item pickup)
             $payload = $request->only([
                 'item_type',
                 'user_address_id',
@@ -113,29 +130,49 @@ class TransactionController extends Controller
                 'unit_amount',
                 'qty',
                 'description',
-                'meta'
+                'meta',
             ]);
-            $trx = $this->transactionService->getById($trxId, $this->user);
 
-            $this->authorize('addItem', $trx);
+            $item = $this->transactionService->addItemToCart($trxId, $payload, $uid);
 
-            $item = $this->transactionService->addItemToCart(
-                $trxId,
-                $payload,
-                $uid
+            return $this->successResponse(
+                data: $item,
+                message: 'Item added to cart successfully.'
             );
-
-            return $this->successResponse($item, 'Item added to cart successfully.');
         } catch (\Throwable $th) {
             [$name, $message, $code, $errors] = $this->normalizeException($th);
-            return $this->errorResponse(
-                $name,
-                $message,
-                statusCode: $code,
-                errors: $errors
-            );
+            return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
         }
     }
+
+    public function updateItem(CartRequest $request, int $itemId): JsonResponse
+    {
+        try {
+            $uid = $this->user->id;
+            $trxId = $request->integer('transaction_id');
+
+            $trx = $this->transactionService->getById($trxId, $this->user);
+            $this->authorize('update', $trx);
+
+            $payload = $request->only([
+                'qty',
+                'description',
+                'unit_amount',
+                'user_address_id',
+                'pickup_schedule_id',
+                'pickup_fee_id',
+                'item_type',
+            ]);
+
+            $item = $this->transactionService->updateItemInCart($trxId, $itemId, $payload, $uid);
+
+            return $this->successResponse($item, 'Item updated successfully.');
+        } catch (\Throwable $th) {
+            [$name, $message, $code, $errors] = $this->normalizeException($th);
+            return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
+        }
+    }
+
 
     public function removeItem(Request $request, int $itemId): JsonResponse
     {

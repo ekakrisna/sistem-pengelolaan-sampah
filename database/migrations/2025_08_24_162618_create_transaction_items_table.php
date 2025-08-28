@@ -44,6 +44,10 @@ return new class extends Migration
             // Hindari duplikasi baris untuk kombinasi lokasi + jadwal (kalau qty=1)
             $t->index(['transaction_id', 'user_address_id', 'pickup_schedule_id'], 'txn_items_tx_addr_sched_idx');
             $t->index(['transaction_id', 'item_type']);
+            $t->unique(
+                ['transaction_id', 'user_address_id', 'pickup_schedule_id', 'pickup_fee_id'],
+                'ti_tx_addr_sched_fee_uq'
+            );
         });
     }
 

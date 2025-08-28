@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\PickupFee;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\PickupSchedule;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
 
@@ -17,6 +17,12 @@ class PickupFeeSeeder extends Seeder
         Schema::disableForeignKeyConstraints();
         PickupFee::truncate();
         Schema::enableForeignKeyConstraints();
+
+        PickupFee::factory([
+            'village_code' => '1101012001',
+            'waste_type_id' => 1,
+            'amount' => 10000,
+        ])->create();
 
         PickupFee::factory()->count(50)->create();
     }

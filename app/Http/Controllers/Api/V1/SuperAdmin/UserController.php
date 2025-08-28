@@ -90,8 +90,11 @@ class UserController extends Controller
     public function destroy(int $user): JsonResponse
     {
         try {
-            $this->userService->deleteById($user);
-            return $this->successResponse(null, 'User successfully deleted.');
+            $deleted = $this->userService->deleteById($user);
+            return $this->successResponse(
+                ['deleted' => (bool) $deleted],
+                'User successfully deleted.'
+            );
         } catch (\Exception $exception) {
             report($exception);
             [$name, $message, $code, $errors] = $this->normalizeException($exception);

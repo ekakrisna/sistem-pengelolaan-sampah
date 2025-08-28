@@ -147,6 +147,21 @@ class TransactionService
         }
     }
 
+    public function updateItemInCart(int $transactionId, int $itemId, array $itemData, int $currentUserId)
+    {
+        DB::beginTransaction();
+        try {
+            $item = $this->transactionRepository->updateItemInCart($transactionId, $itemId, $itemData, $currentUserId);
+            DB::commit();
+            return $item;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            report($e);
+            throw new \InvalidArgumentException($e->getMessage());
+        }
+    }
+
+
     public function removeItemFromCart(int $transactionId, int $itemId, int $currentUserId)
     {
         DB::beginTransaction();

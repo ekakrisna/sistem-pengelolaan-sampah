@@ -26,7 +26,7 @@ class CartRequest extends FormRequest
         $uid = $this->user()->id ?? null;
         return [
             'transaction_id' => [
-                'required',
+                'nullable',
                 'integer',
                 Rule::exists('transactions', 'id')
                     ->where(fn($q) => $q->where('customer_id', $uid)

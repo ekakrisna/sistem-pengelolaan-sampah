@@ -95,8 +95,11 @@ class PickupController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $this->pickupService->deleteById($id);
-            return $this->successResponse(null, 'Pickup successfully deleted.');
+            $deleted = $this->pickupService->deleteById($id);
+            return $this->successResponse(
+                ['deleted' => (bool) $deleted],
+                'Pickup successfully deleted.'
+            );
         } catch (\Exception $exception) {
             report($exception);
             [$name, $message, $code, $errors] = $this->normalizeException($exception);

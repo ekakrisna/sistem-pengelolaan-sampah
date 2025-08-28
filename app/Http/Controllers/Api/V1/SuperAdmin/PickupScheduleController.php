@@ -100,8 +100,11 @@ class PickupScheduleController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $this->pickupScheduleService->deleteById($id);
-            return $this->successResponse(null, 'Pickup schedule successfully deleted.');
+            $deleted = $this->pickupScheduleService->deleteById($id);
+            return $this->successResponse(
+                ['deleted' => (bool) $deleted],
+                'Pickup schedule successfully deleted.'
+            );
         } catch (\Exception $exception) {
             report($exception);
             [$name, $message, $code, $errors] = $this->normalizeException($exception);

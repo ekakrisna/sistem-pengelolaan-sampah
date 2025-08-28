@@ -91,8 +91,11 @@ class WasteTypeController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $this->wasteTypeService->deleteById($id);
-            return $this->successResponse(null, 'Waste type successfully deleted.');
+            $deleted = $this->wasteTypeService->deleteById($id);
+            return $this->successResponse(
+                ['deleted' => (bool) $deleted],
+                'Waste type successfully deleted.'
+            );
         } catch (\Exception $exception) {
             report($exception);
             [$name, $message, $code, $errors] = $this->normalizeException($exception);

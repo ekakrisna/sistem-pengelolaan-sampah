@@ -24,8 +24,8 @@ class DatabaseSeeder extends Seeder
         $this->call(UserSeeder::class);
         $this->call(UserAddressSeeder::class);
         $this->call(WasteTypeSeeder::class);
+        $this->call(PickupFeeSeeder::class);
         $this->call(PickupScheduleSeeder::class);
         $this->call(PickupSeeder::class);
-        $this->call(PickupFeeSeeder::class);
     }
 }

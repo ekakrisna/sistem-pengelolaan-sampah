@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('transactions', function (Blueprint $t) {
             $t->id();
             $t->unsignedBigInteger('customer_id');
-            $t->string('number')->nullable()->unique();     // INV-2025-000123
+            $t->string('number')->nullable()->unique();
             $t->enum('status', StatusTransactionEnum::values())
                 ->default(StatusTransactionEnum::DRAFT->value);
             $t->decimal('subtotal', 12, 2)->default(0);
@@ -24,7 +24,7 @@ return new class extends Migration
             $t->decimal('total', 12, 2)->default(0);
             $t->string('currency', 8)->default('IDR');
             $t->timestamp('due_at')->nullable();
-            $t->timestamp('expires_at')->nullable();        // sinkron dgn payment expiry
+            $t->timestamp('expires_at')->nullable();
             $t->text('description')->nullable();
             $t->json('meta')->nullable();
             $t->timestamps();

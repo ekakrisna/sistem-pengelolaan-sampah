@@ -93,8 +93,11 @@ class TransactionController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $this->transactionService->deleteById($id);
-            return $this->successResponse(null, 'Pickup successfully deleted.');
+            $deleted = $this->transactionService->deleteById($id);
+            return $this->successResponse(
+                ['deleted' => (bool) $deleted],
+                'Transaction successfully deleted.'
+            );
         } catch (\Exception $exception) {
             report($exception);
             return $this->errorResponse(
