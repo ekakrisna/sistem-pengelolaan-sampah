@@ -105,7 +105,7 @@ class TransactionRepository
      */
     public function update(array $data, int $id, ?UserData $user = null)
     {
-        $trx = $$this->transaction->newQuery()->findOrFail($id);
+        $trx = $this->transaction->newQuery()->findOrFail($id);
         $trx->update($data);
         return $trx->load($this->with);
     }
@@ -119,7 +119,7 @@ class TransactionRepository
      */
     public function delete(int $id, ?UserData $user = null)
     {
-        $trx = $$this->transaction->newQuery()->findOrFail($id);
+        $trx = $this->transaction->newQuery()->findOrFail($id);
         $trx->delete();
         return $trx;
     }
@@ -145,7 +145,7 @@ class TransactionRepository
      */
     public function paginateWithFilters(array $filters = [], int $pageSize = 10, ?UserData $user = null)
     {
-        $query = $$this->transaction->newQuery()->with($this->with);
+        $query = $this->transaction->newQuery()->with($this->with);
 
         // Filter by village
         if (!empty($filters['village'])) {
@@ -243,222 +243,126 @@ class TransactionRepository
         return $cart ?: $this->createDraftCart($customerId, $meta);
     }
 
-    /** ---------------- NEW: Cart Items Helpers ---------------- */
     public function addItemToCart(int $transactionId, array $itemData, int $currentUserId): TransactionItem
     {
-        return DB::transaction(function () use ($transactionId, $itemData, $currentUserId) {
-            /** @var Transaction $trx */
-            $trx = $this->transaction->newQuery()
-                ->where('id', $transactionId)
-                ->where('customer_id', $currentUserId)
-                ->where('status', 'draft')
-                ->lockForUpdate()
-                ->firstOrFail();
+        // return DB::transaction(function () use ($transactionId, $itemData, $currentUserId) {
+        // 1) lock
+        $trx = $this->lockDraftForUser($transactionId, $currentUserId);
 
-            // Validasi kepemilikan address (jika diisi)
-            if (!empty($itemData['user_address_id'])) {
-                $owned = UserAddress::query()
-                    ->where('id', $itemData['user_address_id'])
-                    ->where('user_id', $currentUserId)
-                    ->exists();
+        // 2) address ownership
+        $this->assertAddressOwnership($itemData['user_address_id'] ?? null, $currentUserId);
 
-                if (!$owned) {
-                    throw new \InvalidArgumentException('Address not found or not owned by the current user.');
-                }
-            }
+        // 3) insert/merge
+        $item = $this->insertOrMergeItem($trx, $itemData);
 
-            $itemType = $itemData['item_type'] ?? 'pickup';
-            $qtyReq   = max(1, (int)($itemData['qty'] ?? 1));
+        // 4) assert lagi: ownership & compatibility (fee-schedule dsb)
+        $this->assertOwnershipAndCompatibility($trx);
 
-            if ($itemType === 'pickup') {
-                if (empty($itemData['pickup_fee_id'])) {
-                    throw new \InvalidArgumentException('pickup_fee_id is required for pickup item.');
-                }
+        // 5) normalize (force harga fee, merge duplikat, recalc total)
+        $this->normalizeAndRecalc($trx);
 
-                /** @var PickupFee $fee */
-                $fee = PickupFee::findOrFail($itemData['pickup_fee_id']);
+        // throw new \InvalidArgumentException('Invalid item type.');
 
-                // (opsional) pastikan schedule valid jika dikirim
-                if (!empty($itemData['pickup_schedule_id'])) {
-                    PickupSchedule::findOrFail($itemData['pickup_schedule_id']);
-                }
+        // 6) kembalikan keeper utk pickup, atau item itu sendiri
+        if (($itemData['item_type'] ?? 'pickup') === 'pickup') {
+            return ($this->findPickupKeeper($trx, $itemData) ?? $item)->fresh();
+        }
 
-                // === MERGE DUPLICATE (address + schedule + fee) ===
-                $existing = $trx->transaction_items()
-                    ->where('item_type', 'pickup')
-                    ->where('user_address_id',  $itemData['user_address_id'] ?? null)
-                    ->where('pickup_schedule_id',   $itemData['pickup_schedule_id'] ?? null)
-                    ->where('pickup_fee_id',        $fee->id)
-                    ->first();
-
-                if ($existing) {
-                    // tambah qty pada baris lama
-                    $existing->qty += $qtyReq;
-                    $existing->unit_amount = (float) $fee->amount;
-                    $existing->line_total  = $existing->unit_amount * $existing->qty;
-                    // (opsional) update description/meta jika mau disatukan
-                    if (!empty($itemData['description'])) {
-                        $existing->description = $itemData['description'];
-                    }
-                    if (!empty($itemData['meta'])) {
-                        $existing->meta = $itemData['meta'];
-                    }
-                    $existing->save();
-
-                    $this->recalculateTotals($trx);
-                    return $existing->fresh();
-                }
-
-                // tidak ada duplicate → buat baris baru
-                $unitAmount = (float) $fee->amount;
-                $item = $trx->transaction_items()->create([
-                    'item_type'           => 'pickup',
-                    'user_address_id'     => $itemData['user_address_id'] ?? null,
-                    'pickup_schedule_id'  => $itemData['pickup_schedule_id'] ?? null,
-                    'pickup_fee_id'       => $fee->id,
-                    'description'         => $itemData['description'] ?? null,
-                    'unit_amount'         => $unitAmount,
-                    'qty'                 => $qtyReq,
-                    'line_total'          => $unitAmount * $qtyReq,
-                    'meta'                => $itemData['meta'] ?? null,
-                ]);
-
-                $this->recalculateTotals($trx);
-                return $item->fresh();
-            }
-
-            // === Non-pickup: default tidak di-merge (bisa diatur sesuai kebutuhan) ===
-            if (!isset($itemData['unit_amount'])) {
-                throw new \InvalidArgumentException('unit_amount is required for non-pickup item.');
-            }
-
-            $qty        = $qtyReq;
-            $unitAmount = (float) $itemData['unit_amount'];
-            $lineTotal  = $itemData['line_total'] ?? ($unitAmount * $qty);
-
-            $item = $trx->transaction_items()->create([
-                'item_type'           => $itemType,
-                'user_address_id' => $itemData['user_address_id'] ?? null,
-                'pickup_schedule_id'  => $itemData['pickup_schedule_id'] ?? null,
-                'pickup_fee_id'       => $itemData['pickup_fee_id'] ?? null,
-                'description'         => $itemData['description'] ?? null,
-                'unit_amount'         => $unitAmount,
-                'qty'                 => $qty,
-                'line_total'          => $lineTotal,
-                'meta'                => $itemData['meta'] ?? null,
-            ]);
-
-            $this->recalculateTotals($trx);
-            return $item->fresh();
-        });
+        return $item->fresh();
+        // });
     }
 
     public function updateItemInCart(int $transactionId, int $itemId, array $itemData, int $currentUserId): TransactionItem
     {
-        return DB::transaction(function () use ($transactionId, $itemId, $itemData, $currentUserId) {
-            /** @var Transaction $trx */
-            $trx = $this->transaction->newQuery()
-                ->where('id', $transactionId)
-                ->where('customer_id', $currentUserId)
-                ->where('status', 'draft')
-                ->lockForUpdate()
-                ->firstOrFail();
+        // return DB::transaction(function () use ($transactionId, $itemId, $itemData, $currentUserId) {
+        // 1) Lock draft cart milik user
+        $trx = $this->lockDraftForUser($transactionId, $currentUserId);
 
-            /** @var TransactionItem $item */
-            $item = $trx->transaction_items()->where('id', $itemId)->firstOrFail();
+        // 2) Ambil item
+        /** @var TransactionItem $item */
+        $item = $trx->transaction_items()->where('id', $itemId)->firstOrFail();
 
-            // (opsional) update alamat — validasi ownership sudah dilakukan di FormRequest
-            if (array_key_exists('user_address_id', $itemData)) {
-                $item->user_address_id = $itemData['user_address_id'];
+        // 3) Validasi & update address kalau diganti
+        if (array_key_exists('user_address_id', $itemData)) {
+            $this->assertAddressOwnership($itemData['user_address_id'], $currentUserId);
+            $item->user_address_id = $itemData['user_address_id'];
+        }
+
+        // 4) Validasi & update schedule kalau diganti
+        if (array_key_exists('pickup_schedule_id', $itemData)) {
+            if (!is_null($itemData['pickup_schedule_id'])) {
+                PickupSchedule::findOrFail($itemData['pickup_schedule_id']);
             }
+            $item->pickup_schedule_id = $itemData['pickup_schedule_id'];
+        }
 
-            // (opsional) update schedule
-            if (array_key_exists('pickup_schedule_id', $itemData)) {
-                if (!is_null($itemData['pickup_schedule_id'])) {
-                    PickupSchedule::findOrFail($itemData['pickup_schedule_id']);
-                }
-                $item->pickup_schedule_id = $itemData['pickup_schedule_id'];
+        // 5) Validasi & update fee kalau diganti (force harga dari fee)
+        if (array_key_exists('pickup_fee_id', $itemData) && !is_null($itemData['pickup_fee_id'])) {
+            $fee = PickupFee::findOrFail($itemData['pickup_fee_id']);
+            $item->pickup_fee_id = $fee->id;
+            $item->unit_amount   = (float) $fee->amount;
+        }
+
+        // 6) Update field umum
+        if (array_key_exists('qty', $itemData) && !is_null($itemData['qty'])) {
+            $item->qty = max(1, (int)$itemData['qty']);
+        }
+        if (array_key_exists('description', $itemData)) {
+            $item->description = $itemData['description'];
+        }
+
+        // 7) Tipe item + perhitungan line_total sementara untuk non-pickup
+        $itemType = $itemData['item_type'] ?? $item->item_type;
+        $item->item_type = $itemType;
+
+        if ($itemType === 'pickup') {
+            if (!$item->pickup_fee_id) {
+                throw new \InvalidArgumentException('pickup_fee_id required for pickup item.');
             }
-
-            // (opsional) update fee — kalau diganti, paksa unit_amount dari fee baru
-            if (array_key_exists('pickup_fee_id', $itemData) && !is_null($itemData['pickup_fee_id'])) {
-                $fee = PickupFee::findOrFail($itemData['pickup_fee_id']);
-                $item->pickup_fee_id = $fee->id;
-                $item->unit_amount   = (float) $fee->amount; // enforce harga dari DB
+            // line_total akan dihitung ulang di normalizeAndRecalc (force harga dari fee)
+        } else {
+            if (array_key_exists('unit_amount', $itemData) && !is_null($itemData['unit_amount'])) {
+                $item->unit_amount = (float) $itemData['unit_amount'];
             }
+            $item->line_total = $item->unit_amount * $item->qty;
+        }
 
-            // Update qty / description
-            if (array_key_exists('qty', $itemData) && !is_null($itemData['qty'])) {
-                $item->qty = max(1, (int)$itemData['qty']);
-            }
-            if (array_key_exists('description', $itemData)) {
-                $item->description = $itemData['description'];
-            }
+        $item->save();
 
-            // Tentukan tipe item (default: existing)
-            $itemType = $itemData['item_type'] ?? $item->item_type;
+        // 8) Double-check: ownership & kompatibilitas fee-schedule
+        $this->assertOwnershipAndCompatibility($trx);
 
-            // Hitung ulang line_total:
-            if ($itemType === 'pickup') {
-                // item pickup: unit_amount HARUS dari fee (jika belum di-set dari fee baru, ambil fee lama)
-                if (!$item->pickup_fee_id) {
-                    throw new \InvalidArgumentException('pickup_fee_id required for pickup item.');
-                }
-                $fee = PickupFee::findOrFail($item->pickup_fee_id);
-                $item->unit_amount = (float) $fee->amount; // enforce
-                $item->line_total  = $item->unit_amount * $item->qty;
+        // 9) Normalize: force harga pickup dari fee + mergeDuplicates + recalc total
+        $this->normalizeAndRecalc($trx);
 
-                // (opsional) cek kompatibilitas fee-schedule
-                if ($item->pickup_schedule_id) {
-                    $schedule = PickupSchedule::findOrFail($item->pickup_schedule_id);
-                    if (
-                        $schedule->village_code !== $fee->village_code ||
-                        (int)$schedule->waste_type_id !== (int)$fee->waste_type_id
-                    ) {
-                        throw new \InvalidArgumentException('Pickup fee and schedule are not compatible.');
-                    }
-                }
-            } else {
-                // non-pickup: boleh override unit_amount
-                if (array_key_exists('unit_amount', $itemData) && !is_null($itemData['unit_amount'])) {
-                    $item->unit_amount = (float) $itemData['unit_amount'];
-                }
-                $item->line_total = $item->unit_amount * $item->qty;
-            }
+        // 10) Jika pickup, kembalikan keeper (bisa berubah akibat merge)
+        if ($item->item_type === 'pickup') {
+            return ($this->findPickupKeeper($trx, $itemData) ?? $item)->fresh();
+        }
 
-            $item->save();
-
-            $this->recalculateTotals($trx);
-
-            return $item->fresh();
-        });
+        return $item->fresh();
+        // });
     }
 
 
 
     public function removeItemFromCart(int $transactionId, int $itemId, int $currentUserId): bool
     {
-        return DB::transaction(function () use ($transactionId, $itemId, $currentUserId) {
-            /** @var Transaction $trx */
-            $trx = $this->transaction->newQuery()
-                ->where('id', $transactionId)
-                ->where('customer_id', $currentUserId)
-                ->where('status', 'draft')
-                ->lockForUpdate()
-                ->firstOrFail();
+        // return DB::transaction(function () use ($transactionId, $itemId, $currentUserId) {
+        // 1) lock
+        $trx = $this->lockDraftForUser($transactionId, $currentUserId);
 
-            $deleted = $trx->transaction_items()
-                ->where('id', $itemId)
-                ->delete();
+        // 2) delete
+        $deleted = $trx->transaction_items()->where('id', $itemId)->delete();
 
-            $this->recalculateTotals($trx);
+        // 3) normalize + recalc (jaga konsistensi)
+        $this->normalizeAndRecalc($trx);
 
-            return (bool) $deleted;
-        });
+        return (bool) $deleted;
+        // });
     }
 
     /** ---------------- Helpers ---------------- */
-
     protected function recalculateTotals(Transaction $trx): void
     {
         $subtotal = $trx->transaction_items()->sum('line_total');
@@ -471,5 +375,291 @@ class TransactionRepository
     protected function generateNumber(): string
     {
         return 'INV-' . now()->format('Ym') . '-' . Str::upper(Str::random(5));
+    }
+
+    /**
+     * Lock & get cart draft milik user (FOR UPDATE) + recalc dulu.
+     */
+    public function lockAndGetForCheckout(int $transactionId, int $currentUserId): Transaction
+    {
+        /** @var Transaction $trx */
+        $trx = $this->transaction->newQuery()
+            ->where('id', $transactionId)
+            ->where('customer_id', $currentUserId)
+            ->where('status', 'draft')
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        // hitung ulang sebelum lanjut
+        $this->recalculateTotals($trx);
+
+        return $trx->fresh('transaction_items');
+    }
+
+    /**
+     * Normalisasi cart:
+     * - Force harga item pickup = pickup_fees.amount
+     * - (opsional) merge duplikat lagi
+     * - Recalculate total
+     */
+    public function normalizeAndRecalc(Transaction $trx): void
+    {
+        $items = $trx->transaction_items()->get();
+
+        foreach ($items as $item) {
+            if ($item->item_type === 'pickup' && $item->pickup_fee_id) {
+                $fee = PickupFee::findOrFail($item->pickup_fee_id);
+                $item->unit_amount = (float) $fee->amount;
+                $item->line_total  = $item->unit_amount * $item->qty;
+                $item->save();
+            }
+        }
+
+        // Jika ingin, kamu bisa panggil ulang mekanisme merge duplikat di sini.
+        $this->mergeDuplicates($trx);
+
+        $this->recalculateTotals($trx);
+    }
+
+    /**
+     * Validasi:
+     * - user_address_id milik customer
+     * - pickup_fee & pickup_schedule kompatibel (village_code, waste_type_id)
+     */
+    public function assertOwnershipAndCompatibility(Transaction $trx): void
+    {
+        $uid = $trx->customer_id;
+
+        // address ownership
+        $addrIds = $trx->transaction_items()
+            ->whereNotNull('user_address_id')
+            ->pluck('user_address_id')
+            ->all();
+
+        if (!empty($addrIds)) {
+            $owned = UserAddress::whereIn('id', $addrIds)
+                ->where('user_id', $uid)
+                ->count();
+
+            if ($owned !== count($addrIds)) {
+                throw new \InvalidArgumentException('One or more addresses are not owned by the customer.');
+            }
+        }
+
+        // fee & schedule compatibility
+        $items = $trx->transaction_items()->where('item_type', 'pickup')->get();
+        foreach ($items as $it) {
+            if (!$it->pickup_fee_id) {
+                throw new \InvalidArgumentException('pickup_fee_id required for pickup item.');
+            }
+            $fee = PickupFee::findOrFail($it->pickup_fee_id);
+
+            if ($it->pickup_schedule_id) {
+                $sch = PickupSchedule::findOrFail($it->pickup_schedule_id);
+                if (
+                    $sch->village_code !== $fee->village_code ||
+                    (int)$sch->waste_type_id !== (int)$fee->waste_type_id
+                ) {
+                    throw new \InvalidArgumentException('Pickup fee and schedule are not compatible.');
+                }
+            }
+        }
+    }
+
+    public function mergeDuplicates(Transaction $trx): void
+    {
+        // Cari grup duplikat untuk item pickup dalam transaksi ini
+        $dups = TransactionItem::query()
+            ->select([
+                'user_address_id',
+                'pickup_schedule_id',
+                'pickup_fee_id',
+                DB::raw('COUNT(*) as cnt'),
+            ])
+            ->where('transaction_id', $trx->id)
+            ->where('item_type', 'pickup')
+            ->groupBy('user_address_id', 'pickup_schedule_id', 'pickup_fee_id')
+            ->having('cnt', '>', 1)
+            ->get();
+
+        foreach ($dups as $g) {
+            // Ambil semua baris pada grup, kunci untuk update
+            $items = TransactionItem::query()
+                ->where('transaction_id',    $trx->id)
+                ->where('item_type',         'pickup')
+                ->where('user_address_id',   $g->user_address_id)
+                ->where('pickup_schedule_id', $g->pickup_schedule_id)
+                ->where('pickup_fee_id',     $g->pickup_fee_id)
+                ->orderBy('id', 'asc')
+                ->lockForUpdate()
+                ->get();
+
+            if ($items->count() < 2) {
+                continue; // tidak ada duplikat nyata
+            }
+
+            // Keeper = baris pertama (id paling kecil)
+            /** @var \App\Models\TransactionItem $keeper */
+            $keeper = $items->first();
+            $others = $items->slice(1);
+
+            $totalQty = (int)$items->sum('qty');
+
+            // Paksa harga dari fee
+            $fee = PickupFee::findOrFail($g->pickup_fee_id);
+            $keeper->qty         = max(1, $totalQty);
+            $keeper->unit_amount = (float)$fee->amount;
+            $keeper->line_total  = $keeper->unit_amount * $keeper->qty;
+
+            // (Opsional) gabungkan deskripsi unik
+            $descParts = array_filter($items->pluck('description')->all(), fn($v) => filled($v));
+            if (!empty($descParts)) {
+                $keeper->description = implode(' / ', array_values(array_unique($descParts)));
+            }
+
+            $keeper->save();
+
+            // Hapus baris duplikat lainnya
+            TransactionItem::query()
+                ->whereIn('id', $others->pluck('id'))
+                ->delete();
+        }
+
+        // Hitung ulang total transaksi
+        $this->recalculateTotals($trx);
+    }
+
+    /**
+     * Lock transaksi draft milik user (FOR UPDATE).
+     */
+    protected function lockDraftForUser(int $transactionId, int $currentUserId): Transaction
+    {
+        /** @var Transaction $trx */
+        $trx = $this->transaction->newQuery()
+            ->where('id', $transactionId)
+            ->where('customer_id', $currentUserId)
+            ->where('status', 'draft')
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        return $trx;
+    }
+
+    /**
+     * Pastikan address (jika ada) dimiliki oleh user.
+     */
+    protected function assertAddressOwnership(?int $userAddressId, int $currentUserId): void
+    {
+        if (empty($userAddressId)) return;
+
+        $owned = UserAddress::query()
+            ->where('id', $userAddressId)
+            ->where('user_id', $currentUserId)
+            ->exists();
+
+        if (!$owned) {
+            throw new \InvalidArgumentException('Address not found or not owned by the current user.');
+        }
+    }
+
+    /**
+     * Insert atau merge item ke cart.
+     * - pickup: enforce harga dari PickupFee, merge berdasar (address,schedule,fee)
+     * - non-pickup: langsung create (bisa diubah kalau ingin merge)
+     *
+     * Return: item keeper (TransactionItem)
+     */
+    protected function insertOrMergeItem(Transaction $trx, array $itemData): TransactionItem
+    {
+        $itemType = $itemData['item_type'] ?? 'pickup';
+        $qtyReq   = max(1, (int)($itemData['qty'] ?? 1));
+
+        if ($itemType === 'pickup') {
+            if (empty($itemData['pickup_fee_id'])) {
+                throw new \InvalidArgumentException('pickup_fee_id is required for pickup item.');
+            }
+
+            /** @var PickupFee $fee */
+            $fee = PickupFee::findOrFail($itemData['pickup_fee_id']);
+
+            // (opsional) validasi schedule ada jika dikirim
+            if (!empty($itemData['pickup_schedule_id'])) {
+                PickupSchedule::findOrFail($itemData['pickup_schedule_id']);
+            }
+
+            // Merge on insert
+            $existing = $trx->transaction_items()
+                ->where('item_type', 'pickup')
+                ->where('user_address_id',     $itemData['user_address_id'] ?? null)
+                ->where('pickup_schedule_id',  $itemData['pickup_schedule_id'] ?? null)
+                ->where('pickup_fee_id',       $fee->id)
+                ->orderBy('id', 'asc')
+                ->first();
+
+            if ($existing) {
+                $existing->qty        += $qtyReq;
+                $existing->unit_amount = (float) $fee->amount; // force harga
+                $existing->line_total  = $existing->unit_amount * $existing->qty;
+                if (!empty($itemData['description'])) {
+                    $existing->description = $itemData['description'];
+                }
+                if (!empty($itemData['meta'])) {
+                    $existing->meta        = $itemData['meta'];
+                }
+                $existing->save();
+                return $existing->fresh();
+            }
+
+            // buat baris baru
+            $unitAmount = (float) $fee->amount;
+            return $trx->transaction_items()->create([
+                'item_type'           => 'pickup',
+                'user_address_id'     => $itemData['user_address_id'] ?? null,
+                'pickup_schedule_id'  => $itemData['pickup_schedule_id'] ?? null,
+                'pickup_fee_id'       => $fee->id,
+                'description'         => $itemData['description'] ?? null,
+                'unit_amount'         => $unitAmount,
+                'qty'                 => $qtyReq,
+                'line_total'          => $unitAmount * $qtyReq,
+                'meta'                => $itemData['meta'] ?? null,
+            ])->fresh();
+        }
+
+        // non-pickup
+        if (!isset($itemData['unit_amount'])) {
+            throw new \InvalidArgumentException('unit_amount is required for non-pickup item.');
+        }
+
+        $qty        = $qtyReq;
+        $unitAmount = (float) $itemData['unit_amount'];
+        $lineTotal  = $itemData['line_total'] ?? ($unitAmount * $qty);
+
+        return $trx->transaction_items()->create([
+            'item_type'           => $itemType,
+            'user_address_id'     => $itemData['user_address_id'] ?? null,
+            'pickup_schedule_id'  => $itemData['pickup_schedule_id'] ?? null,
+            'pickup_fee_id'       => $itemData['pickup_fee_id'] ?? null,
+            'description'         => $itemData['description'] ?? null,
+            'unit_amount'         => $unitAmount,
+            'qty'                 => $qty,
+            'line_total'          => $lineTotal,
+            'meta'                => $itemData['meta'] ?? null,
+        ])->fresh();
+    }
+
+    /**
+     * (Opsional) cari keeper untuk kombinasi pickup tertentu setelah merge.
+     */
+    protected function findPickupKeeper(Transaction $trx, array $itemData): ?TransactionItem
+    {
+        if (!isset($itemData['pickup_fee_id'])) return null;
+
+        return $trx->transaction_items()
+            ->where('item_type', 'pickup')
+            ->where('user_address_id',     $itemData['user_address_id'] ?? null)
+            ->where('pickup_schedule_id',  $itemData['pickup_schedule_id'] ?? null)
+            ->where('pickup_fee_id',       $itemData['pickup_fee_id'])
+            ->orderBy('id', 'asc')
+            ->first();
     }
 }

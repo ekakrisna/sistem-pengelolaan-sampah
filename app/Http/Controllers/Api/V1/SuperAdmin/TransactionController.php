@@ -58,11 +58,8 @@ class TransactionController extends Controller
             return $this->successResponse($data, 'Transaction successfully created.');
         } catch (\Exception $exception) {
             report($exception);
-            return $this->errorResponse(
-                "Error::InternalServerError",
-                $exception->getMessage(),
-                statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
-            );
+            [$name, $message, $code, $errors] = $this->normalizeException($exception);
+            return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
         }
     }
 
@@ -82,11 +79,8 @@ class TransactionController extends Controller
             return $this->successResponse($data, 'Transaction successfully updated.');
         } catch (\Exception $exception) {
             report($exception);
-            return $this->errorResponse(
-                "Error::InternalServerError",
-                $exception->getMessage(),
-                statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
-            );
+            [$name, $message, $code, $errors] = $this->normalizeException($exception);
+            return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
         }
     }
 
@@ -100,11 +94,8 @@ class TransactionController extends Controller
             );
         } catch (\Exception $exception) {
             report($exception);
-            return $this->errorResponse(
-                "Error::InternalServerError",
-                $exception->getMessage(),
-                statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
-            );
+            [$name, $message, $code, $errors] = $this->normalizeException($exception);
+            return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
         }
     }
 }

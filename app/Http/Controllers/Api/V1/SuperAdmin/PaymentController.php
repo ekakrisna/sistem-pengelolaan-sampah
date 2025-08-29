@@ -56,11 +56,8 @@ class PaymentController extends Controller
             return $this->successResponse($data, 'Payment successfully created.');
         } catch (\Exception $exception) {
             report($exception);
-            return $this->errorResponse(
-                "Error::InternalServerError",
-                $exception->getMessage(),
-                statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
-            );
+            [$name, $message, $code, $errors] = $this->normalizeException($exception);
+            return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
         }
     }
 
@@ -80,11 +77,8 @@ class PaymentController extends Controller
             return $this->successResponse($data, 'Pickup schedule successfully updated.');
         } catch (\Exception $exception) {
             report($exception);
-            return $this->errorResponse(
-                "Error::InternalServerError",
-                $exception->getMessage(),
-                statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
-            );
+            [$name, $message, $code, $errors] = $this->normalizeException($exception);
+            return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
         }
     }
 
@@ -98,11 +92,8 @@ class PaymentController extends Controller
             );
         } catch (\Exception $exception) {
             report($exception);
-            return $this->errorResponse(
-                "Error::InternalServerError",
-                $exception->getMessage(),
-                statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
-            );
+            [$name, $message, $code, $errors] = $this->normalizeException($exception);
+            return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
         }
     }
 }

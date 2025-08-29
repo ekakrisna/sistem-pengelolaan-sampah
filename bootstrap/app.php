@@ -1,10 +1,14 @@
 <?php
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -35,7 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->renderable(function (\Throwable $e, $request) {
             if ($request->is('api/*')) {
-                if ($e instanceof \Illuminate\Auth\AuthenticationException) {
+                if ($e instanceof AuthenticationException) {
                     return errorResponse(
                         name: 'Error::Auth::Unauthenticated',
                         message: 'You are not authenticated or the token is invalid.',
@@ -43,7 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     );
                 }
 
-                if ($e instanceof \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException) {
+                if ($e instanceof MethodNotAllowedHttpException) {
                     return errorResponse(
                         name: 'Error::RequestError::MethodNotAllowed',
                         message: $e->getMessage(),
@@ -51,7 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     );
                 }
 
-                if ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+                if ($e instanceof NotFoundHttpException) {
                     return errorResponse(
                         name: 'Error::RequestError::NotFound',
                         message: $e->getMessage(),
@@ -59,7 +63,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     );
                 }
 
-                if ($e instanceof \Illuminate\Validation\ValidationException) {
+                if ($e instanceof ValidationException) {
                     return errorResponse(
                         name: 'Error::ValidationError',
                         message: $e->getMessage(),

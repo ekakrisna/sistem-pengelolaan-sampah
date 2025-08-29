@@ -17,10 +17,10 @@ class PickupScheduleSeeder extends Seeder
         PickupSchedule::truncate();
         Schema::enableForeignKeyConstraints();
 
-        $pickupSchedule = PickupSchedule::factory([
+        PickupSchedule::factory()->create([
             'waste_type_id' => 1,
             'village_code' => '1101012001',
-        ])->create();
+        ]);
 
         PickupSchedule::factory()->count(30)->create();
     }

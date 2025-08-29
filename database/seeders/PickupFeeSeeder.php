@@ -18,11 +18,11 @@ class PickupFeeSeeder extends Seeder
         PickupFee::truncate();
         Schema::enableForeignKeyConstraints();
 
-        PickupFee::factory([
+        PickupFee::factory()->create([
             'village_code' => '1101012001',
             'waste_type_id' => 1,
             'amount' => 10000,
-        ])->create();
+        ]);
 
         PickupFee::factory()->count(50)->create();
     }

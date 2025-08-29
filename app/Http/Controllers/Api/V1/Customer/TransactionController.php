@@ -7,6 +7,7 @@ use App\Data\UserData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CartRequest;
 use App\Http\Resources\Transaction\TransactionCollection;
+use App\Models\Transaction;
 use App\Services\TransactionService;
 use App\Traits\ApiResponse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -80,17 +81,15 @@ class TransactionController extends Controller
     }
 
     /** ---------------- Cart Endpoints ---------------- */
-
     public function cart(): JsonResponse
     {
+        // Selalu ambil/buat draft cart milik user
         $cart = $this->transactionService->getOrCreateDraftCart($this->user->id);
 
-        // authorize view milik sendiri
         $this->authorize('view', $cart);
 
-        $data = TransactionData::from($cart);
         return $this->successResponse(
-            data: $data,
+            data: TransactionData::from($cart),
             message: 'Draft cart retrieved successfully.'
         );
     }
@@ -98,30 +97,20 @@ class TransactionController extends Controller
     public function addItem(CartRequest $request): JsonResponse
     {
         try {
-            $uid   = $this->user->id;
-            $trxId = $request->integer('transaction_id');
+            $uid = $this->user->id;
 
-            // Auto get-or-create cart kalau transaction_id tidak dikirim
+            // Jika transaction_id kosong → auto create cart
+            $trxId = (int) $request->input('transaction_id', 0);
             if (!$trxId) {
-                $cart = $this->transactionService->getOrCreateDraftCart($uid);
+                $cart  = $this->transactionService->getOrCreateDraftCart($uid);
                 $trxId = $cart->id;
             }
 
-            // Ambil transaksi (role-aware) & authorize penambahan item
+            // Authorize terhadap cart milik sendiri & status draft
             $trx = $this->transactionService->getById($trxId, $this->user);
             $this->authorize('addItem', $trx);
 
-            // Pastikan alamat milik user (defense-in-depth)
-            if ($request->filled('user_address_id')) {
-                abort_unless(
-                    \App\Models\UserAddress::where('id', $request->integer('user_address_id'))
-                        ->where('user_id', $uid)->exists(),
-                    403,
-                    'Address not owned by you.'
-                );
-            }
-
-            // Payload (unit_amount boleh tidak disertakan; repo akan force dari pickup_fees untuk item pickup)
+            // Payload untuk repo (repo akan enforce fee price, merge dupes, dll)
             $payload = $request->only([
                 'item_type',
                 'user_address_id',
@@ -135,8 +124,13 @@ class TransactionController extends Controller
 
             $item = $this->transactionService->addItemToCart($trxId, $payload, $uid);
 
+            // Ambil cart terbaru (subtotal/total sudah di-recalc di repo)
+            $cart = $this->transactionService->getById($trxId, $this->user);
+
+            $data = TransactionData::from($cart);
+
             return $this->successResponse(
-                data: $item,
+                data: $data,
                 message: 'Item added to cart successfully.'
             );
         } catch (\Throwable $th) {
@@ -148,9 +142,10 @@ class TransactionController extends Controller
     public function updateItem(CartRequest $request, int $itemId): JsonResponse
     {
         try {
-            $uid = $this->user->id;
-            $trxId = $request->integer('transaction_id');
+            $uid   = $this->user->id;
+            $trxId = (int) $request->integer('transaction_id');
 
+            // Wajib ada transaction_id untuk update
             $trx = $this->transactionService->getById($trxId, $this->user);
             $this->authorize('update', $trx);
 
@@ -166,20 +161,27 @@ class TransactionController extends Controller
 
             $item = $this->transactionService->updateItemInCart($trxId, $itemId, $payload, $uid);
 
-            return $this->successResponse($item, 'Item updated successfully.');
+            $cart = $this->transactionService->getById($trxId, $this->user);
+
+            $data = TransactionData::from($cart);
+
+            return $this->successResponse(
+                data: $data,
+                message: 'Item updated successfully.'
+            );
         } catch (\Throwable $th) {
             [$name, $message, $code, $errors] = $this->normalizeException($th);
             return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
         }
     }
 
-
     public function removeItem(Request $request, int $itemId): JsonResponse
     {
         try {
-            $uid = $this->user->id;
-            $trxId = $request->integer('transaction_id');
+            $uid   = $this->user->id;
+            $trxId = (int) $request->integer('transaction_id');
 
+            // Validasi cepat: cart harus draft & milik user
             $request->validate([
                 'transaction_id' => [
                     'required',
@@ -193,24 +195,17 @@ class TransactionController extends Controller
             $trx = $this->transactionService->getById($trxId, $this->user);
             $this->authorize('removeItem', $trx);
 
-            $deleted = $this->transactionService->removeItemFromCart(
-                $trxId,
-                $itemId,
-                $uid
-            );
+            $deleted = $this->transactionService->removeItemFromCart($trxId, $itemId, $uid);
+
+            // $cart = $this->transactionService->getById($trxId, $this->user);
 
             return $this->successResponse(
-                ['deleted' => (bool) $deleted],
-                $deleted ? 'Item removed successfully.' : 'Item not found.'
+                data: ['deleted' => (bool) $deleted],
+                message: $deleted ? 'Item removed successfully.' : 'Item not found.'
             );
         } catch (\Throwable $th) {
             [$name, $message, $code, $errors] = $this->normalizeException($th);
-            return $this->errorResponse(
-                $name,
-                $message,
-                statusCode: $code,
-                errors: $errors
-            );
+            return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
         }
     }
 }
