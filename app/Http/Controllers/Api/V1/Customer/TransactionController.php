@@ -7,7 +7,6 @@ use App\Data\UserData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CartRequest;
 use App\Http\Resources\Transaction\TransactionCollection;
-use App\Models\Transaction;
 use App\Services\TransactionService;
 use App\Traits\ApiResponse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -202,6 +201,34 @@ class TransactionController extends Controller
             return $this->successResponse(
                 data: ['deleted' => (bool) $deleted],
                 message: $deleted ? 'Item removed successfully.' : 'Item not found.'
+            );
+        } catch (\Throwable $th) {
+            [$name, $message, $code, $errors] = $this->normalizeException($th);
+            return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
+        }
+    }
+
+    public function checkout(Request $request, int $trxId): JsonResponse
+    {
+        try {
+            $uid = $this->user->id;
+
+            // Ambil transaksi & authorize (TransactionPolicy@checkout)
+            $trx = $this->transactionService->getById($trxId, $this->user);
+            $this->authorize('checkout', $trx);
+
+            // Validasi sederhana: hanya notes, TIDAK ada channel_code di sini
+            $payload = $request->validate([
+                'notes' => 'nullable|string|max:500',
+            ]);
+            // Safety: kalau client kirim channel_code, kita abaikan
+            unset($payload['channel_code']);
+
+            $pending = $this->transactionService->checkoutCart($trxId, $uid, $payload);
+
+            return $this->successResponse(
+                data: TransactionData::from($pending),
+                message: 'Checkout prepared successfully (review ready).'
             );
         } catch (\Throwable $th) {
             [$name, $message, $code, $errors] = $this->normalizeException($th);

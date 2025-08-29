@@ -75,7 +75,7 @@ class UserService
         } catch (Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException($e->getMessage());
+            throw $e;
         }
     }
 
@@ -95,7 +95,7 @@ class UserService
         } catch (Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException($e->getMessage());
+            throw $e;
         }
     }
 

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -38,11 +39,12 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->renderable(function (\Throwable $e, $request) {
+            dd($e);
             if ($request->is('api/*')) {
                 if ($e instanceof AuthenticationException) {
                     return errorResponse(
                         name: 'Error::Auth::Unauthenticated',
-                        message: 'You are not authenticated or the token is invalid.',
+                        message: 'You are not authenticated.',
                         statusCode: Response::HTTP_UNAUTHORIZED
                     );
                 }
@@ -56,10 +58,30 @@ return Application::configure(basePath: dirname(__DIR__))
                 }
 
                 if ($e instanceof NotFoundHttpException) {
+                    $prev = $e->getPrevious();
+
+                    if ($prev instanceof ModelNotFoundException) {
+                        $model = class_basename($prev->getModel());
+
+                        return errorResponse(
+                            name: 'Error::ModelNotFound',
+                            message: "{$model} tidak ditemukan.",
+                            statusCode: Response::HTTP_NOT_FOUND
+                        );
+                    }
                     return errorResponse(
                         name: 'Error::RequestError::NotFound',
                         message: $e->getMessage(),
                         statusCode: Response::HTTP_NOT_FOUND
+                    );
+                }
+
+                if ($e instanceof ModelNotFoundException) {
+                    return errorResponse(
+                        name: 'Error::ModelNotFound',
+                        message: class_basename($e->getModel()) . ' tidak ditemukan.',
+                        statusCode: Response::HTTP_NOT_FOUND
+
                     );
                 }
 
@@ -85,6 +107,27 @@ return Application::configure(basePath: dirname(__DIR__))
                         name: 'Error::TypeError',
                         message: $e->getMessage(),
                         statusCode: Response::HTTP_INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                if ($e instanceof \InvalidArgumentException) {
+                    $prev = $e->getPrevious();
+
+                    if ($prev instanceof ModelNotFoundException) {
+                        $model = class_basename($prev->getModel());
+
+                        return errorResponse(
+                            name: 'Error::ModelNotFound',
+                            message: "{$model} item could not be found.",
+                            statusCode: Response::HTTP_NOT_FOUND
+                        );
+                    }
+
+                    return errorResponse(
+                        name: 'Error::ModelNotFound',
+                        message: $e->getMessage(),
+                        statusCode: Response::HTTP_NOT_FOUND
+
                     );
                 }
 

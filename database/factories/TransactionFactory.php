@@ -40,6 +40,10 @@ final class TransactionFactory extends Factory
             'expires_at' => fake()->optional()->datetime(),
             'description' => fake()->optional()->text,
             'meta' => fake()->optional()->word,
+            'amount_snapshot' => fake()->optional()->randomFloat(2, 0, 9999999999),
+            'items_snapshot' => fake()->optional()->word,
+            'snapshot_at' => fake()->optional()->datetime(),
+            'snapshot_version' => fake()->optional()->randomNumber(),
         ];
     }
 }

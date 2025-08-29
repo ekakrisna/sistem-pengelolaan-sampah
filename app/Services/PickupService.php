@@ -84,7 +84,7 @@ class PickupService
         } catch (Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException($e->getMessage());
+            throw $e;
         }
     }
 
@@ -105,7 +105,7 @@ class PickupService
         } catch (Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException($e->getMessage());
+            throw $e;
         }
     }
 

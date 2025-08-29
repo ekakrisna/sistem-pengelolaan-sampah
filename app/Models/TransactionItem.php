@@ -43,6 +43,8 @@ class TransactionItem extends Model
 	use HasFactory, SoftDeletes;
 	protected $table = 'transaction_items';
 
+	protected $notFoundMessage = 'The transaction item could not be found';
+
 	protected $casts = [
 		'transaction_id' => 'int',
 		'user_address_id' => 'int',

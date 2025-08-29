@@ -59,7 +59,16 @@ class TransactionService
      */
     public function save(array $data, ?UserData $user = null)
     {
-        return $this->transactionRepository->save($data, $user);
+        DB::beginTransaction();
+        try {
+            $transactionRepository = $this->transactionRepository->save($data, $user);
+            DB::commit();
+            return $transactionRepository;
+        } catch (Exception $e) {
+            DB::rollBack();
+            report($e);
+            throw $e;
+        }
     }
 
     /**
@@ -81,7 +90,7 @@ class TransactionService
         } catch (Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException($e->getMessage());
+            throw $e;
         }
     }
 
@@ -102,7 +111,7 @@ class TransactionService
         } catch (Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException($e->getMessage());
+            throw $e;
         }
     }
 
@@ -117,7 +126,6 @@ class TransactionService
         return $this->transactionRepository->paginateWithFilters($filters, $pageSize, $user);
     }
 
-    /** ---------------- Cart Helpers ---------------- */
     public function getDraftCart(int $customerId)
     {
         return $this->transactionRepository->getDraftCart($customerId);
@@ -125,7 +133,16 @@ class TransactionService
 
     public function createDraftCart(int $customerId, array $meta = [])
     {
-        return $this->transactionRepository->createDraftCart($customerId, $meta);
+        DB::beginTransaction();
+        try {
+            $item = $this->transactionRepository->createDraftCart($customerId, $meta);
+            DB::commit();
+            return $item;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            report($e);
+            throw $e;
+        }
     }
 
     public function getOrCreateDraftCart(int $customerId, array $meta = [])
@@ -143,7 +160,7 @@ class TransactionService
         } catch (\Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException($e->getMessage());
+            throw $e;
         }
     }
 
@@ -157,10 +174,9 @@ class TransactionService
         } catch (\Exception $e) {
             DB::rollBack();
             report($e);
-            throw new \InvalidArgumentException($e->getMessage());
+            throw $e;
         }
     }
-
 
     public function removeItemFromCart(int $transactionId, int $itemId, int $currentUserId)
     {
@@ -172,7 +188,21 @@ class TransactionService
         } catch (\Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException($e->getMessage());
+            throw $e;
+        }
+    }
+
+    public function checkoutCart(int $transactionId, int $currentUserId, array $meta = [])
+    {
+        DB::beginTransaction();
+        try {
+            $item = $this->transactionRepository->checkoutCart($transactionId, $currentUserId, $meta);
+            DB::commit();
+            return $item;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            report($e);
+            throw $e;
         }
     }
 }

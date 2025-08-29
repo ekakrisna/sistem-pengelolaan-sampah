@@ -51,7 +51,11 @@ class Transaction extends Model
 		'total' => 'float',
 		'due_at' => 'datetime',
 		'expires_at' => 'datetime',
-		'meta' => 'json'
+		'meta' => 'json',
+		'amount_snapshot' => 'float',
+		'items_snapshot' => 'json',
+		'snapshot_at' => 'datetime',
+		'snapshot_version' => 'int',
 	];
 
 	protected $fillable = [
@@ -66,7 +70,11 @@ class Transaction extends Model
 		'due_at',
 		'expires_at',
 		'description',
-		'meta'
+		'meta',
+		'amount_snapshot',
+		'items_snapshot',
+		'snapshot_at',
+		'snapshot_version',
 	];
 
 	public function customer()

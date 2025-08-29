@@ -78,7 +78,7 @@ class PaymentService
         } catch (Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException($e->getMessage());
+            throw $e;
         }
     }
 
@@ -98,7 +98,7 @@ class PaymentService
         } catch (Exception $e) {
             DB::rollBack();
             report($e);
-            throw new InvalidArgumentException($e->getMessage());
+            throw $e;
         }
     }
 

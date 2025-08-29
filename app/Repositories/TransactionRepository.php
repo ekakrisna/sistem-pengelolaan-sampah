@@ -8,7 +8,6 @@ use App\Models\PickupSchedule;
 use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Models\UserAddress;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -201,7 +200,6 @@ class TransactionRepository
     }
 
     /** ---------------- NEW: Draft Cart Helpers ---------------- */
-
     public function getDraftCart(int $customerId): ?Transaction
     {
         return $this->transaction->newQuery()
@@ -214,27 +212,27 @@ class TransactionRepository
 
     public function createDraftCart(int $customerId, array $meta = []): Transaction
     {
-        return DB::transaction(function () use ($customerId, $meta) {
-            // Lock agar tidak balapan bikin 2 cart
-            $existing = $this->getDraftCart($customerId);
-            if ($existing) {
-                return $existing;
-            }
+        // return DB::transaction(function () use ($customerId, $meta) {
+        // Lock agar tidak balapan bikin 2 cart
+        $existing = $this->getDraftCart($customerId);
+        if ($existing) {
+            return $existing;
+        }
 
-            $trx = $this->transaction->newQuery()->create([
-                'customer_id' => $customerId,
-                'number'      => $this->generateNumber(),
-                'status'      => 'draft',
-                'subtotal'    => 0,
-                'discount_amount' => 0,
-                'tax_amount'  => 0,
-                'total'       => 0,
-                'currency'    => 'IDR',
-                'meta'        => $meta ?: null,
-            ]);
+        $trx = $this->transaction->newQuery()->create([
+            'customer_id' => $customerId,
+            'number'      => $this->generateNumber(),
+            'status'      => 'draft',
+            'subtotal'    => 0,
+            'discount_amount' => 0,
+            'tax_amount'  => 0,
+            'total'       => 0,
+            'currency'    => 'IDR',
+            'meta'        => $meta ?: null,
+        ]);
 
-            return $trx->load($this->with);
-        });
+        return $trx->load($this->with);
+        // });
     }
 
     public function getOrCreateDraftCart(int $customerId, array $meta = []): Transaction
@@ -248,6 +246,8 @@ class TransactionRepository
         // return DB::transaction(function () use ($transactionId, $itemData, $currentUserId) {
         // 1) lock
         $trx = $this->lockDraftForUser($transactionId, $currentUserId);
+
+        $this->invalidateSnapshotIfAny($trx);
 
         // 2) address ownership
         $this->assertAddressOwnership($itemData['user_address_id'] ?? null, $currentUserId);
@@ -277,6 +277,8 @@ class TransactionRepository
         // return DB::transaction(function () use ($transactionId, $itemId, $itemData, $currentUserId) {
         // 1) Lock draft cart milik user
         $trx = $this->lockDraftForUser($transactionId, $currentUserId);
+
+        $this->invalidateSnapshotIfAny($trx);
 
         // 2) Ambil item
         /** @var TransactionItem $item */
@@ -344,13 +346,13 @@ class TransactionRepository
         // });
     }
 
-
-
     public function removeItemFromCart(int $transactionId, int $itemId, int $currentUserId): bool
     {
         // return DB::transaction(function () use ($transactionId, $itemId, $currentUserId) {
         // 1) lock
         $trx = $this->lockDraftForUser($transactionId, $currentUserId);
+
+        $this->invalidateSnapshotIfAny($trx);
 
         // 2) delete
         $deleted = $trx->transaction_items()->where('id', $itemId)->delete();
@@ -462,6 +464,23 @@ class TransactionRepository
                 ) {
                     throw new \InvalidArgumentException('Pickup fee and schedule are not compatible.');
                 }
+
+                if ($it->user_address_id) {
+                    /** @var UserAddress $addr */
+                    $addr = UserAddress::findOrFail($it->user_address_id);
+
+                    // VARIAN A (disarankan): jika user_addresses punya kolom village_code
+                    if (!is_null($addr->village_code) && $addr->village_code !== $sch->village_code) {
+                        throw new \InvalidArgumentException('Address village does not match schedule village.');
+                    }
+
+                    // VARIAN B (kalau tidak ada kolom village_code di user_addresses):
+                    // - uncomment jika kamu punya relasi address->village
+                    $addr->loadMissing('village');
+                    if (optional($addr->village)->code !== $sch->village_code) {
+                        throw new \InvalidArgumentException('Address village does not match schedule village.');
+                    }
+                }
             }
         }
     }
@@ -499,7 +518,7 @@ class TransactionRepository
             }
 
             // Keeper = baris pertama (id paling kecil)
-            /** @var \App\Models\TransactionItem $keeper */
+            /** @var TransactionItem $keeper */
             $keeper = $items->first();
             $others = $items->slice(1);
 
@@ -589,6 +608,7 @@ class TransactionRepository
 
             // Merge on insert
             $existing = $trx->transaction_items()
+                ->withTrashed()
                 ->where('item_type', 'pickup')
                 ->where('user_address_id',     $itemData['user_address_id'] ?? null)
                 ->where('pickup_schedule_id',  $itemData['pickup_schedule_id'] ?? null)
@@ -597,6 +617,10 @@ class TransactionRepository
                 ->first();
 
             if ($existing) {
+                if ($existing->trashed()) {
+                    $existing->restore(); // ⬅️ balikkan dari soft delete
+                }
+
                 $existing->qty        += $qtyReq;
                 $existing->unit_amount = (float) $fee->amount; // force harga
                 $existing->line_total  = $existing->unit_amount * $existing->qty;
@@ -661,5 +685,125 @@ class TransactionRepository
             ->where('pickup_fee_id',       $itemData['pickup_fee_id'])
             ->orderBy('id', 'asc')
             ->first();
+    }
+
+    public function checkoutCart(int $transactionId, int $currentUserId, array $meta = []): Transaction
+    {
+        // return DB::transaction(function () use ($transactionId, $currentUserId, $meta) {
+        // Lock draft milik user
+        /** @var Transaction $trx */
+        $trx = $this->transaction->newQuery()
+            ->where('id', $transactionId)
+            ->where('customer_id', $currentUserId)
+            ->where('status', 'draft')
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        // Normalisasi & validasi
+        $this->normalizeAndRecalc($trx);
+        $this->assertOwnershipAndCompatibility($trx);
+
+        if ($trx->transaction_items()->count() === 0) {
+            throw new \InvalidArgumentException('Cannot checkout empty cart.');
+        }
+
+        // snapshot
+        $trx->amount_snapshot = $trx->total;
+        $trx->items_snapshot  = $trx->transaction_items()
+            ->get(['item_type', 'user_address_id', 'pickup_schedule_id', 'pickup_fee_id', 'unit_amount', 'qty', 'line_total'])
+            ->toArray();
+        $trx->snapshot_at     = now();
+        $trx->snapshot_version = ($trx->snapshot_version ?? 0) + 1;
+
+        // HANYA generate description di tahap checkout (STATUS tetap draft)
+        // Ambil "notes" (kalau dikirim) untuk disisipkan di deskripsi dan disimpan ke meta
+        $userNote = $meta['notes'] ?? null;
+
+        $trx->description = $this->makeCheckoutDescription($trx, $userNote);
+
+        // simpan meta ringan (tanpa channel_code)
+        unset($meta['channel_code']);
+        if (!empty($meta)) {
+            $trx->meta = array_merge((array) ($trx->meta ?? []), $meta);
+        }
+
+        $trx->save();
+
+        return $trx->fresh($this->with);
+        // });
+    }
+
+    /**
+     * Buat ringkasan human-readable untuk ditaruh ke transactions.description
+     * - Contoh: "2x pickup (Organik) di 1 alamat • Total: Rp 25.000"
+     * - Jika ada catatan user, akan ditambahkan di belakang.
+     */
+    protected function makeCheckoutDescription(Transaction $trx, ?string $userNote = null): string
+    {
+
+        $items = $trx->transaction_items()
+            ->with(['pickup_fee:id,waste_type_id', 'pickup_schedule:id,village_code,waste_type_id'])
+            ->get();
+
+        // Hitung hanya item pickup
+        $pickupItems = $items->where('item_type', 'pickup');
+        $pickupCount = (int) $pickupItems->sum('qty');
+
+        // Hitung jumlah alamat unik
+        $uniqueAddressCount = $pickupItems
+            ->pluck('user_address_id')
+            ->filter()
+            ->unique()
+            ->count();
+
+        // Hitung kategori / tipe sampah (berdasarkan pickup_fee_id / schedule)
+        // kita pakai waste_type_id dari fee kalau ada, fallback ke schedule
+        $wasteTypeCounts = [];
+        foreach ($pickupItems as $it) {
+            $wasteTypeId = $it->pickup_fee_id && $it->relationLoaded('pickupFee') && $it->pickupFee
+                ? $it->pickupFee->waste_type_id
+                : ($it->pickup_schedule_id && $it->relationLoaded('pickupSchedule') && $it->pickupSchedule
+                    ? $it->pickupSchedule->waste_type_id
+                    : null);
+
+            $key = $wasteTypeId ? "WT#{$wasteTypeId}" : 'WT#unknown';
+            $wasteTypeCounts[$key] = ($wasteTypeCounts[$key] ?? 0) + (int) $it->qty;
+        }
+
+        // Bentuk potongan text kategori (tanpa nama waste type – jika butuh nama, eager load relasinya di atas)
+        // Misal: "WT#3:2x, WT#5:1x"
+        $wasteSummary = [];
+        foreach ($wasteTypeCounts as $key => $qty) {
+            $wasteSummary[] = "{$key}:{$qty}x";
+        }
+        $wastePart = empty($wasteSummary) ? '' : ' (' . implode(', ', $wasteSummary) . ')';
+
+        // Ringkas total rupiah
+        $totalPart = 'Total: Rp ' . number_format((float) $trx->total, 0, ',', '.');
+
+        // Alamat part
+        $addrPart = $uniqueAddressCount > 0 ? " di {$uniqueAddressCount} alamat" : '';
+
+        // Build base sentence
+        $base = "{$pickupCount}x pickup{$wastePart}{$addrPart} • {$totalPart}";
+
+        // Sisipkan note user jika ada
+        if ($userNote && filled($userNote)) {
+            $base .= ' • Catatan: ' . Str::limit($userNote, 120);
+        }
+
+        // Batas maksimum panjang (opsional)
+        return Str::limit($base, 255);
+    }
+
+    protected function invalidateSnapshotIfAny(Transaction $trx): void
+    {
+        if (!is_null($trx->amount_snapshot) || !is_null($trx->items_snapshot)) {
+            $trx->amount_snapshot  = null;
+            $trx->items_snapshot   = null;
+            $trx->snapshot_at      = null;
+            $trx->snapshot_version = ($trx->snapshot_version ?? 0) + 1;
+            $trx->save();
+        }
     }
 }

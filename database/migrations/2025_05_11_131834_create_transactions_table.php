@@ -27,6 +27,12 @@ return new class extends Migration
             $t->timestamp('expires_at')->nullable();
             $t->text('description')->nullable();
             $t->json('meta')->nullable();
+
+            $t->decimal('amount_snapshot', 12, 2)->nullable();
+            $t->json('items_snapshot')->nullable();
+            $t->timestamp('snapshot_at')->nullable();
+            $t->unsignedInteger('snapshot_version')->default(0);
+
             $t->timestamps();
             $t->softDeletes();
 
