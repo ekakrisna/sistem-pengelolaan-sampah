@@ -10,6 +10,11 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
+
+    protected $policies = [
+        Transaction::class => TransactionPolicy::class,
+    ];
+
     /**
      * Register any application services.
      */
@@ -26,8 +31,4 @@ class AppServiceProvider extends ServiceProvider
         Schema::defaultStringLength(191);
         Vite::prefetch(concurrency: 3);
     }
-
-    protected $policies = [
-        Transaction::class => TransactionPolicy::class,
-    ];
 }

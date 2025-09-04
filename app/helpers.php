@@ -83,13 +83,13 @@ if (!function_exists('normalizeException')) {
             $prev = $th->getPrevious();
             if ($prev instanceof ModelNotFoundException) {
                 $model   = class_basename($prev->getModel());
-                $code    = Response::HTTP_NOT_FOUND; // 404
+                $code    = Response::HTTP_NOT_FOUND;
                 $name    = 'Error::ModelNotFound';
-                $message = "{$model} item could not be found.";
+                $message = "Data not found.";
                 return [$name, $message, $code, $errors];
             }
 
-            $code    = Response::HTTP_NOT_FOUND; // 404
+            $code    = Response::HTTP_NOT_FOUND;
             $name    = 'Error::RequestError::NotFound';
             $message = $th->getMessage() ?: 'Route not found.';
             return [$name, $message, $code, $errors];
@@ -97,9 +97,9 @@ if (!function_exists('normalizeException')) {
 
         if ($th instanceof ModelNotFoundException) {
             $model   = class_basename($th->getModel());
-            $code    = Response::HTTP_NOT_FOUND; // 404
+            $code    = Response::HTTP_NOT_FOUND;
             $name    = 'Error::ModelNotFound';
-            $message = "{$model} item could not be found.";
+            $message = "Data not found.";
             return [$name, $message, $code, $errors];
         }
 

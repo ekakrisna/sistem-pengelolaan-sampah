@@ -2,18 +2,13 @@
 
 namespace App\Services\Xendits\PaymentRequest;
 
-use App\Data\Xendit\Common\PaymentRequestResponseData;
-use App\Data\Xendit\PaymentRequest\Token\PayWithPaymentTokenData;
+use App\Data\Xendit\PaymentRequest\PaymentsApiPayWithTokenData;
 use App\Services\Xendits\Http\XenditService;
 
 class PaymentWithTokenService extends XenditService
 {
-    // ... metode lain (card/qris/va/ewallet)
-
-    /** PAY with Payment Token */
-    public function payWithPaymentToken(PayWithPaymentTokenData $data): PaymentRequestResponseData
+    public function payWithPaymentToken(PaymentsApiPayWithTokenData $data): array
     {
-        $res = $this->post('/v3/payment_requests', $data->toPayload());
-        return PaymentRequestResponseData::fromXendit($res);
+        return $this->post('/v3/payment_requests', $data->toPayload());
     }
 }

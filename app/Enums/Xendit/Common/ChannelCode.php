@@ -16,12 +16,16 @@ enum ChannelCode: string
     case MANDIRI_VIRTUAL_ACCOUNT = 'MANDIRI_VIRTUAL_ACCOUNT';
     case PERMATA_VIRTUAL_ACCOUNT = 'PERMATA_VIRTUAL_ACCOUNT';
     case BCA_VIRTUAL_ACCOUNT = 'BCA_VIRTUAL_ACCOUNT';
+    case CIMB_VIRTUAL_ACCOUNT = 'CIMB_VIRTUAL_ACCOUNT';
 
         // E-wallet
     case OVO = 'OVO';
     case DANA = 'DANA';
     case SHOPEEPAY = 'SHOPEEPAY';
     case LINKAJA = 'LINKAJA';
+    case ASTRAPAY = 'ASTRAPAY';
+    case JENIUSPAY = 'JENIUSPAY';
+    case SAKUKU = 'SAKUKU';
 
     case ALFAMART = 'ALFAMART';
     case INDOMARET = 'INDOMARET';

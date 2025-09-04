@@ -9,7 +9,6 @@ class PaymentPayAndSaveService extends XenditService
 {
     public function create(PaymentsApiPayAndSaveData $data): array
     {
-        $res = $this->post('/v3/payment_requests', $data->toPayload());
-        return $res;
+        return $this->post('/v3/payment_requests', $data->toPayload());
     }
 }

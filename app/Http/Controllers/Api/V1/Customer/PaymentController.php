@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Customer;
 use App\Data\PaymentData;
 use App\Data\TransactionData;
 use App\Data\UserData;
+use App\Data\Xendit\PaymentRequest\PaymentsApiPayData;
 use App\Http\Controllers\Controller;
 use App\Services\PaymentService;
 use App\Services\TransactionService;
@@ -22,7 +23,7 @@ class PaymentController extends Controller
         protected Request $request,
         protected PaymentService $paymentService
     ) {
-        $this->user = UserData::from($request->user());
+        $this->user = $request->user() ? UserData::from($request->user()) : null;
         $this->paymentService = $paymentService;
     }
 
@@ -78,6 +79,35 @@ class PaymentController extends Controller
                 statusCode: $code,
                 errors: $errors,
             );
+        }
+    }
+
+    public function pay(Request $request, int $transactionId): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'channel_code'        => 'required|string|max:50',
+                'channel_properties'  => 'nullable|array',
+                'metadata'            => 'nullable|array',
+            ]);
+
+            $result = $this->paymentService->createPaymentRequest(
+                $transactionId,
+                $this->user,
+                $validated
+            );
+
+            return $this->successResponse(
+                data: [
+                    'payment'     => PaymentData::from($result['payment']),
+                    'transaction' => TransactionData::from($result['transaction']),
+                    'xendit'      => $result['xendit'],
+                ],
+                message: 'Payment request created successfully.'
+            );
+        } catch (\Throwable $th) {
+            [$name, $message, $code, $errors] = $this->normalizeException($th);
+            return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
         }
     }
 }

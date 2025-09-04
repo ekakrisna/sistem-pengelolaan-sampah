@@ -74,6 +74,7 @@ Route::prefix(config('app.api.version'))
                     Route::post('/', [CustomerPaymentController::class, 'store']);
                     Route::get('{id}', [CustomerPaymentController::class, 'show']);
                     Route::delete('{id}', [CustomerPaymentController::class, 'cancel']);
+                    Route::post('pay/{transactionId}', [CustomerPaymentController::class, 'pay']);
                 });
 
                 // Transactions

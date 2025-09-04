@@ -98,7 +98,6 @@ class PaymentsApiPayData extends Data
 
     public function toPayload(): array
     {
-        // dd($this->channel_properties);
         return array_filter([
             'reference_id'       => $this->reference_id,
             'type'               => 'PAY',
@@ -112,6 +111,24 @@ class PaymentsApiPayData extends Data
             'description'        => $this->description,
             'metadata'           => $this->metadata,
             'items'              => $this->items?->toArray(),
-        ], static fn($v) => $v !== null && $v !== '');
+        ], fn($value) => !is_null($value));
+    }
+
+    public function toArray(): array
+    {
+        return array_filter([
+            'reference_id'       => $this->reference_id,
+            'type'               => 'PAY',
+            'country'            => $this->country->value,
+            'currency'           => $this->currency->value,
+            'request_amount'     => $this->request_amount,
+            'customer'           => $this->customer?->toArray(),
+            'capture_method'     => $this->capture_method?->value ?? CaptureMethod::AUTOMATIC->value,
+            'channel_code'       => $this->channel_code->value,
+            'channel_properties' => $this->channel_properties->toArray(),
+            'description'        => $this->description,
+            'metadata'           => $this->metadata,
+            'items'              => $this->items?->toArray(),
+        ], fn($value) => !is_null($value));
     }
 }

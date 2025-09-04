@@ -66,6 +66,6 @@ class ChannelPropsData extends Data
             'recurring_configuration' => $this->recurring_configuration?->toArray(),
             'payer_name'              => $this->payer_name,
             'virtual_account_number'   => $this->virtual_account_number,
-        ], static fn($v) => $v !== null && $v !== '');
+        ], fn($value) => !is_null($value));
     }
 }

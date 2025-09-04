@@ -376,9 +376,8 @@ class TransactionRepository
 
     protected function generateNumber(): string
     {
-        return 'INV-' . now()->format('Ym') . '-' . Str::upper(Str::random(5));
+        return 'INV-' . now()->format('Ym') . '-' . Str::upper(Str::uuid()->toString());
     }
-
     /**
      * Lock & get cart draft milik user (FOR UPDATE) + recalc dulu.
      */
@@ -551,7 +550,7 @@ class TransactionRepository
     /**
      * Lock transaksi draft milik user (FOR UPDATE).
      */
-    protected function lockDraftForUser(int $transactionId, int $currentUserId): Transaction
+    public function lockDraftForUser(int $transactionId, int $currentUserId): Transaction
     {
         /** @var Transaction $trx */
         $trx = $this->transaction->newQuery()
@@ -562,6 +561,17 @@ class TransactionRepository
             ->firstOrFail();
 
         return $trx;
+    }
+
+    /** 
+     * Generate nomor kalau belum ada. 
+     */
+    public function ensureNumber(Transaction $trx): void
+    {
+        if (!empty($trx->number)) return;
+
+        $trx->number = $this->generateNumber();
+        $trx->save();
     }
 
     /**
@@ -742,7 +752,7 @@ class TransactionRepository
     {
 
         $items = $trx->transaction_items()
-            ->with(['pickup_fee:id,waste_type_id', 'pickup_schedule:id,village_code,waste_type_id'])
+            ->with(['pickup_fee.waste_type', 'pickup_schedule.waste_type'])
             ->get();
 
         // Hitung hanya item pickup
@@ -760,13 +770,20 @@ class TransactionRepository
         // kita pakai waste_type_id dari fee kalau ada, fallback ke schedule
         $wasteTypeCounts = [];
         foreach ($pickupItems as $it) {
-            $wasteTypeId = $it->pickup_fee_id && $it->relationLoaded('pickupFee') && $it->pickupFee
-                ? $it->pickupFee->waste_type_id
-                : ($it->pickup_schedule_id && $it->relationLoaded('pickupSchedule') && $it->pickupSchedule
-                    ? $it->pickupSchedule->waste_type_id
+            $wasteTypeId = $it->pickup_fee_id && $it->relationLoaded('pickup_fee') && $it->pickup_fee
+                ? $it->pickup_fee->waste_type_id
+                : ($it->pickup_schedule_id && $it->relationLoaded('pickup_schedule') && $it->pickup_schedule
+                    ? $it->pickup_schedule->waste_type_id
                     : null);
 
-            $key = $wasteTypeId ? "WT#{$wasteTypeId}" : 'WT#unknown';
+            $wasteTypeName = $it->pickup_fee_id && $it->relationLoaded('pickup_fee') && $it->pickup_fee
+                ? $it->pickup_fee->waste_type->name
+                : ($it->pickup_schedule_id && $it->relationLoaded('pickup_schedule') && $it->pickup_schedule
+                    ? $it->pickup_schedule->waste_type->name
+                    : '');
+
+            $key = $wasteTypeId ? "WT{$wasteTypeName}#{$wasteTypeId}" : 'WT#unknown';
+
             $wasteTypeCounts[$key] = ($wasteTypeCounts[$key] ?? 0) + (int) $it->qty;
         }
 

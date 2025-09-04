@@ -117,7 +117,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
                         return errorResponse(
                             name: 'Error::ModelNotFound',
-                            message: "{$model} item could not be found.",
+                            message: "Data not found.",
                             statusCode: Response::HTTP_NOT_FOUND
                         );
                     }
