@@ -22,6 +22,8 @@ class TransactionRepository
         'transaction_items.user_address.village.district.city.province',
         'transaction_items.pickup_schedule.waste_type',
         'transaction_items.pickup_fee.waste_type',
+        'transaction_items.pickup_fee.admin',
+        'transaction_items.pickup_fee.village',
     ];
 
     public function __construct(Transaction $transaction)

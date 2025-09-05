@@ -236,8 +236,12 @@ class PaymentService
                 'items'            => null
             ]);
 
-            // === Idempotency ===
-            $idempKey     = $this->makeIdempotencyKey($trx, $channel, $expiresAt);
+            // Idempotency key (sudah kamu implement)
+            $idempKey    = $this->makeIdempotencyKey($trx, $channel, $expiresAt);
+
+            // === NEW: Resolve subaccount & split ===
+            $forUserId   = $this->resolveForUserId($trx, $request);
+            $splitRuleId = $this->resolveSplitRuleId($trx, $request);
 
             // kalau sudah pernah dibuat (retry) => kembalikan existing
             if ($existing = $this->paymentRepository->findByIdempotencyKey($idempKey)) {
@@ -251,7 +255,9 @@ class PaymentService
             // 4) Panggil Xendit (DTO → array payload via toPayload())
             $xenditResp = $this->xenditPaymentPay->create(
                 $dto,
-                idempotencyKey: $idempKey
+                idempotencyKey: $idempKey,
+                forUserId: $forUserId,
+                splitRuleId: $splitRuleId
             );
 
             // 5) Simpan ke payments + update transaksi ke pending (strict by columns)
@@ -259,7 +265,8 @@ class PaymentService
                 $trx,
                 $xenditResp,
                 $expiresAt,
-                $idempKey
+                $idempKey,
+                $forUserId
             );
 
             return [
@@ -282,5 +289,38 @@ class PaymentService
             (string) (int) round($trx->total * 100),
             (string) $expiresAt->getTimestamp(),
         ]);
+    }
+
+    protected function resolveForUserId(Transaction $trx, array $request): ?string
+    {
+        // 1) Hard override dari client (jika kamu izinkan)
+        if (!empty($request['for_user_id'])) {
+            return (string) $request['for_user_id'];
+        }
+
+        // 2) Dari metadata transaksi (mis: ditetapkan saat cart/checkout)
+        $metaFor = data_get($trx->meta, 'xendit_for_user_id');
+        if (!empty($metaFor)) {
+            return (string) $metaFor;
+        }
+
+        // 3) Dari entitas internal (contoh: admin yang mengelola village/waste_type punya subaccount)
+        //    Sesuaikan dengan relasi & kolom yang kamu punya.
+        if (method_exists($trx, 'admin') && !empty($trx->admin?->xendit_account_id)) {
+            return (string) $trx->admin->xendit_account_id;
+        }
+
+        // 4) Default: NULL → pakai main account
+        return null;
+    }
+
+    protected function resolveSplitRuleId(Transaction $trx, array $request): ?string
+    {
+        // Opsional: kalau kamu pakai split
+        if (!empty($request['split_rule_id'])) {
+            return (string) $request['split_rule_id'];
+        }
+        $metaSplit = data_get($trx->meta, 'xendit_split_rule_id');
+        return $metaSplit ? (string) $metaSplit : null;
     }
 }

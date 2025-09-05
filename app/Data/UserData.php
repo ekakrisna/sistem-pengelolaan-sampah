@@ -32,6 +32,9 @@ class UserData extends Data
 
         #[Enum(UserEnum::class)]
         public UserEnum $role,
+
+        public ?string $xendit_for_user_id,
+
         #[Hidden]
         public ?string $remember_token,
         #[Date]
