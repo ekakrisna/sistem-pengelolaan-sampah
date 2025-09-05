@@ -7,8 +7,8 @@
 namespace App\Models;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -23,6 +23,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Carbon $end_pickup_time
  * @property string $village_code
  * @property int $quota
+ * @property Carbon|null $pickup_date
+ * @property Carbon|null $scheduled_for
+ * @property Carbon|null $run_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property string|null $deleted_at
@@ -45,7 +48,10 @@ class PickupSchedule extends Model
 		'waste_type_id' => 'int',
 		'start_pickup_time' => 'datetime',
 		'end_pickup_time' => 'datetime',
-		'quota' => 'int'
+		'quota' => 'int',
+		'pickup_date' => 'datetime',
+		'scheduled_for' => 'datetime',
+		'run_at' => 'datetime'
 	];
 
 	protected $fillable = [
@@ -55,7 +61,10 @@ class PickupSchedule extends Model
 		'start_pickup_time',
 		'end_pickup_time',
 		'village_code',
-		'quota'
+		'quota',
+		'pickup_date',
+		'scheduled_for',
+		'run_at'
 	];
 
 	public function admin()

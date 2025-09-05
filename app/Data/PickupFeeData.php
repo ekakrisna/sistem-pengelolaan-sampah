@@ -2,6 +2,7 @@
 
 namespace App\Data;
 
+use App\Enums\PickupFeeEnum;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Numeric;
@@ -9,6 +10,7 @@ use Spatie\LaravelData\Attributes\Validation\Date;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
+use Spatie\LaravelData\Attributes\Validation\Enum;
 use Spatie\LaravelData\DataCollection;
 
 class PickupFeeData extends Data
@@ -24,6 +26,14 @@ class PickupFeeData extends Data
         public int $amount,
 
         public ?string $description,
+
+        #[Enum(PickupFeeEnum::class)]
+        public PickupFeeEnum $interval_unit,
+
+        #[Numeric]
+        public int $interval_count,
+
+        public bool $is_active,
 
         #[Date]
         public ?Carbon $created_at,

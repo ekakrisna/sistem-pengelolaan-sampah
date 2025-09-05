@@ -7,8 +7,8 @@
 namespace App\Models;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -25,6 +25,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property float $unit_amount
  * @property int $qty
  * @property float $line_total
+ * @property Carbon|null $current_period_start
+ * @property Carbon|null $current_period_end
  * @property array|null $meta
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -43,8 +45,6 @@ class TransactionItem extends Model
 	use HasFactory, SoftDeletes;
 	protected $table = 'transaction_items';
 
-	protected $notFoundMessage = 'The transaction item could not be found';
-
 	protected $casts = [
 		'transaction_id' => 'int',
 		'user_address_id' => 'int',
@@ -54,6 +54,8 @@ class TransactionItem extends Model
 		'unit_amount' => 'float',
 		'qty' => 'int',
 		'line_total' => 'float',
+		'current_period_start' => 'datetime',
+		'current_period_end' => 'datetime',
 		'meta' => 'json'
 	];
 
@@ -68,6 +70,8 @@ class TransactionItem extends Model
 		'unit_amount',
 		'qty',
 		'line_total',
+		'current_period_start',
+		'current_period_end',
 		'meta'
 	];
 

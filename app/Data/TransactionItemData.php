@@ -34,8 +34,20 @@ class TransactionItemData extends Data
     public int $qty;
     #[Numeric]
     public int $line_total;
+
+    #[Date]
+    public ?Carbon $current_period_start;
+    #[Date]
+    public ?Carbon $current_period_end;
+
     #[Json]
     public ?array $meta;
+
+    #[Date]
+    public ?Carbon $created_at;
+    #[Date]
+    public ?Carbon $updated_at;
+
     #[Date]
     public ?Carbon $deleted_at;
 

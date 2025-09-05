@@ -33,12 +33,18 @@ class PickupScheduleData extends Data
 
         public int $quota,
 
+
+        #[Date]
+        public ?Carbon $pickup_date,
+        #[Date]
+        public ?Carbon $scheduled_for,
+        #[Date]
+        public ?Carbon $run_at,
+
         #[Date]
         public ?Carbon $created_at,
-
         #[Date]
         public ?Carbon $updated_at,
-
         #[Date]
         public ?Carbon $deleted_at,
 

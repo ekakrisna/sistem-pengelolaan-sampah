@@ -31,6 +31,10 @@ return new class extends Migration
             $t->decimal('unit_amount', 12, 2);
             $t->unsignedInteger('qty')->default(1);
             $t->decimal('line_total', 12, 2);
+
+            $t->timestamp('current_period_start')->nullable();
+            $t->timestamp('current_period_end')->nullable();
+
             $t->json('meta')->nullable();
             $t->timestamps();
             $t->softDeletes();

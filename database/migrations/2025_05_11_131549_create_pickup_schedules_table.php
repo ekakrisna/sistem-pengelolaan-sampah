@@ -21,6 +21,11 @@ return new class extends Migration
             $table->time('end_pickup_time');
             $table->char('village_code', 10);
             $table->unsignedBigInteger('quota')->default(0);
+
+            $table->date('pickup_date')->nullable();
+            $table->datetime('scheduled_for')->nullable();
+            $table->datetime('run_at')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
 

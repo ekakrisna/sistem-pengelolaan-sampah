@@ -6,9 +6,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -21,6 +21,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $admin_id
  * @property float $amount
  * @property string|null $description
+ * @property string $interval_unit
+ * @property int $interval_count
+ * @property bool $is_active
+ * @property array|null $meta
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property string|null $deleted_at
@@ -40,7 +44,10 @@ class PickupFee extends Model
 	protected $casts = [
 		'waste_type_id' => 'int',
 		'admin_id' => 'int',
-		'amount' => 'float'
+		'amount' => 'float',
+		'interval_count' => 'int',
+		'is_active' => 'bool',
+		'meta' => 'json'
 	];
 
 	protected $fillable = [
@@ -48,7 +55,11 @@ class PickupFee extends Model
 		'waste_type_id',
 		'admin_id',
 		'amount',
-		'description'
+		'description',
+		'interval_unit',
+		'interval_count',
+		'is_active',
+		'meta'
 	];
 
 	public function admin()

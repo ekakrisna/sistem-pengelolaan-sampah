@@ -14,11 +14,13 @@ use App\Enums\Xendit\Common\Country;
 use App\Enums\Xendit\Common\Currency;
 use App\Enums\Xendit\Common\CustomerType;
 use App\Models\Payment;
+use App\Models\Transaction;
 use App\Repositories\PaymentRepository;
 use App\Repositories\TransactionRepository;
 use App\Services\Xendits\PaymentRequest\PaymentPayService;
 use App\Services\Xendits\PaymentRequest\PaymentRequestService;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -162,13 +164,13 @@ class PaymentService
             $this->transactionRepository->ensureNumber($trx);
 
             // 3) Build DTO sesuai definisi PaymentsApiPayData
-            $channelCodeEnum = ChannelCode::from($request['channel_code']); // akan throw jika tidak valid
+            $channel = ChannelCode::from($request['channel_code']);
             $propsArr        = $request['channel_properties'] ?? [];
 
             // Prioritas: kalau client sudah kirim expires_at, pakai itu; else pakai default per channel
             if (empty($propsArr['expires_at'])) {
                 /** @var CarbonImmutable $expiresAt */
-                $expiresAt = ChannelExpiry::defaultExpiresAt($channelCodeEnum);
+                $expiresAt = ChannelExpiry::defaultExpiresAt($channel);
                 $propsArr['expires_at'] = $expiresAt->toIso8601String(); // RFC 3339
             } else {
                 $expiresAt = CarbonImmutable::parse($propsArr['expires_at']);
@@ -179,9 +181,30 @@ class PaymentService
             $trx->due_at     = $trx->due_at ?? $expiresAt;
             $trx->save();
 
-            $propsArr['display_name'] = $trx->customer->name;
+            // Jika client belum kirim display_name, pakai yang di transaksi
+            if (empty($propsArr['display_name'])) {
+                $propsArr['display_name'] = $trx->customer->name;
+            }
+
+            // Jika client belum kirim mobile_number, pakai yang di transaksi untuk E-Wallet (OVO, Gopay, etc)
+            if (empty($propsArr['account_mobile_number'])) {
+                $propsArr['account_mobile_number'] = $trx->customer->phone;
+            }
+
+            // Jika client belum kirim email, pakai yang di transaksi untuk E-Wallet (OVO, Gopay, etc)
+            if (empty($propsArr['account_email'])) {
+                $propsArr['account_email'] = $trx->customer->email;
+            }
+
+            $cleanChannelProps = ChannelPropsData::buildForChannel(
+                $channel,
+                $propsArr,
+                $trx,
+                $expiresAt
+            );
+
             // 4) Build DTO strict
-            $channelProps = ChannelPropsData::from($propsArr)->toArray();
+            $channelProps = ChannelPropsData::from($cleanChannelProps)->toArray();
 
             // (Opsional) siapkan data customer bila ingin kirim ke Xendit Customer object
             // $individualDetail = CustomerIndividualDetailData::from([
@@ -206,21 +229,37 @@ class PaymentService
                 'request_amount'   => (float) $trx->total,
                 // 'customer'         => $customerDto,
                 'capture_method'   => CaptureMethod::AUTOMATIC,
-                'channel_code'     => $channelCodeEnum,
+                'channel_code'     => $channel,
                 'channel_properties' => $channelProps,
                 'description'      => $trx->description,
                 'metadata'         => $request['metadata'] ?? null,
                 'items'            => null
             ]);
 
+            // === Idempotency ===
+            $idempKey     = $this->makeIdempotencyKey($trx, $channel, $expiresAt);
+
+            // kalau sudah pernah dibuat (retry) => kembalikan existing
+            if ($existing = $this->paymentRepository->findByIdempotencyKey($idempKey)) {
+                return [
+                    'payment'     => $existing->fresh(),
+                    'transaction' => $trx->fresh(['transaction_items', 'payments']),
+                    'xendit'      => $existing->xendit_data ?? null,
+                ];
+            }
+
             // 4) Panggil Xendit (DTO → array payload via toPayload())
-            $xenditResp = $this->xenditPaymentPay->create($dto);
+            $xenditResp = $this->xenditPaymentPay->create(
+                $dto,
+                idempotencyKey: $idempKey
+            );
 
             // 5) Simpan ke payments + update transaksi ke pending (strict by columns)
             $saved = $this->paymentRepository->createFromXenditStrict(
                 $trx,
                 $xenditResp,
-                $expiresAt
+                $expiresAt,
+                $idempKey
             );
 
             return [
@@ -229,5 +268,19 @@ class PaymentService
                 'xendit'      => $xenditResp,
             ];
         });
+    }
+
+    protected function makeIdempotencyKey(
+        Transaction $trx,
+        ChannelCode $channel,
+        CarbonInterface $expiresAt
+    ): string {
+        return implode(':', [
+            'pr',
+            $trx->number ?: ('trx' . $trx->id),
+            $channel->value,
+            (string) (int) round($trx->total * 100),
+            (string) $expiresAt->getTimestamp(),
+        ]);
     }
 }

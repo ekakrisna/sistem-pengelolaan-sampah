@@ -18,6 +18,13 @@ return new class extends Migration
             $table->unsignedBigInteger('admin_id');
             $table->decimal('amount', 10, 2);
             $table->text('description')->nullable();
+
+            $table->enum('interval_unit', ['day', 'week', 'month', 'year'])->default('month');
+            $table->unsignedInteger('interval_count')->default(1);
+            $table->boolean('is_active')->default(true);
+
+            $table->json('meta')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
 

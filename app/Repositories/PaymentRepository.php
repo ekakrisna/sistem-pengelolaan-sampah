@@ -5,27 +5,19 @@ namespace App\Repositories;
 use App\Data\UserData;
 use App\Enums\StatusPaymentEnum;
 use App\Enums\StatusTransactionEnum;
-use App\Models\Payment;
+use App\Enums\Xendit\Common\ChannelCode;
 use App\Models\Transaction;
+use App\Models\Payment;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
-use Illuminate\Database\Eloquent\Builder;
 
 class PaymentRepository
 {
-    /**
-     * @var Payment
-     */
+
     protected Payment $payment;
 
-    /** @var array<string> */
     protected array $with = ['customer', 'transaction.transaction_items'];
 
-    /**
-     * Payment constructor.
-     *
-     * @param Payment $payment
-     */
     public function __construct(Payment $payment)
     {
         $this->payment = $payment;
@@ -60,23 +52,12 @@ class PaymentRepository
     //     };
     // }
 
-    /**
-     * Get all payment.
-     *
-     * @return Payment $payment
-     */
     public function all(?UserData $user = null)
     {
         return $this->payment->newQuery()->with($this->with)->get();
     }
 
 
-    /**
-     * Get payment by id
-     *
-     * @param $id
-     * @return mixed
-     */
     public function getById(int $id, ?UserData $user = null)
     {
         return $this->payment->newQuery()
@@ -85,24 +66,12 @@ class PaymentRepository
             ->firstOrFail();
     }
 
-    /**
-     * Save Payment
-     *
-     * @param $data
-     * @return Payment
-     */
     public function save(array $data)
     {
         $payment = $this->payment->newQuery()->create($data);
         return $payment->load($this->with);
     }
 
-    /**
-     * Update Payment
-     *
-     * @param $data
-     * @return Payment
-     */
     public function update(array $data, int $id, ?UserData $user = null)
     {
         // $payment = $this->scopeForUser($user)->findOrFail($id);
@@ -111,12 +80,6 @@ class PaymentRepository
         return $payment->load($this->with);
     }
 
-    /**
-     * Delete Payment
-     *
-     * @param $data
-     * @return Payment
-     */
     public function delete(int $id, ?UserData $user = null)
     {
         // $payment = $this->scopeForUser($user)->findOrFail($id);
@@ -125,11 +88,13 @@ class PaymentRepository
         return $payment;
     }
 
-    /**
-     * @param array $filters
-     * @param int $pageSize
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
-     */
+    public function findByIdempotencyKey(string $key): ?Payment
+    {
+        return $this->payment->newQuery()
+            ->where('idempotency_key', $key)
+            ->first();
+    }
+
     public function paginateWithFilters(array $filters = [], int $pageSize = 10, ?UserData $user = null)
     {
         $query = $this->payment->newQuery()->with($this->with);
@@ -179,19 +144,16 @@ class PaymentRepository
         return $query->paginate($pageSize);
     }
 
-    /**
-     * Buat record Payment dari respons Xendit & ubah transaksi -> pending + due/expires.
-     *
-     * @return array{0:\App\Models\Payment,1:\App\Models\Transaction}
-     */
     public function createFromXenditStrict(
         Transaction $trx,
         array $resp,
-        CarbonInterface $expiresAt
+        CarbonInterface $expiresAt,
+        ?string $idempotencyKey = null,
+        ?string $forcedForUserId = null
     ): array {
-        // --- Ambil field dari response (top-level) ---
         $prId        = $resp['payment_request_id'] ?? $resp['id'] ?? null;
         $businessId  = $resp['business_id'] ?? $resp['xendit_account_id'] ?? null;
+        $accountId   = $forcedForUserId ?: $businessId;
         $referenceId = $resp['reference_id'] ?? $trx->number ?? null;
         $channelCode = $resp['channel_code'] ?? null;
         $requestAmt  = $resp['request_amount'] ?? (float) $trx->total;
@@ -201,7 +163,6 @@ class PaymentRepository
             ? $resp['channel_properties']
             : [];
 
-        // Prefer expires_at dari response → fallback ke parameter/now+15m
         $expiresAtIso = $channelProps['expires_at'] ?? null;
         $expiresAt    = $expiresAtIso
             ? CarbonImmutable::parse($expiresAtIso)
@@ -216,8 +177,6 @@ class PaymentRepository
         // Map status Xendit → enum payment kamu
         $paymentStatus = $this->mapXenditStatusToPaymentStatus($resp['status'] ?? null);
 
-        // --- Create Payment ---
-        /** @var \App\Models\Payment $payment */
         $payment = $this->payment->newQuery()->create([
             'transaction_id'            => $trx->id,
             'customer_id'               => $trx->customer_id,
@@ -229,8 +188,8 @@ class PaymentRepository
             'channel'                   => $channelCode,                  // simpan apa adanya
             'method_code'               => null,                          // optional
             'reference_id'              => $referenceId,
-            'idempotency_key'           => null,                          // set di Http layer jika perlu
-            'xendit_account_id'         => $businessId,
+            'idempotency_key'           => $idempotencyKey,                         // set di Http layer jika perlu
+            'xendit_account_id'         => $accountId,
 
             'xendit_payment_request_id' => $prId,
             'xendit_charge_id'          => null,
@@ -248,12 +207,10 @@ class PaymentRepository
             'xendit_data'               => $resp,
         ]);
 
-        // --- Update Transaction: pending + sinkron due/expires ---
         $trx->update([
             'status'     => StatusTransactionEnum::PENDING->value,
             'due_at'     => $trx->due_at ?: $expiresAt,
             'expires_at' => $expiresAt,
-            // optional, simpan description dari resp bila belum ada
             'description' => $trx->description ?: $desc,
         ]);
 
@@ -263,11 +220,9 @@ class PaymentRepository
         ];
     }
 
-    /**
-     * Map status Payment Request Xendit → StatusPaymentEnum (kamu).
-     */
-    protected function mapXenditStatusToPaymentStatus(?string $xenditStatus): string
-    {
+    protected function mapXenditStatusToPaymentStatus(
+        ?string $xenditStatus
+    ): string {
         $x = strtoupper((string) $xenditStatus);
 
         return match ($x) {
@@ -292,10 +247,6 @@ class PaymentRepository
         };
     }
 
-    /**
-     * Ambil checkout URL dari actions (jika ada).
-     * Payment Request sering mengembalikan link web/deeplink untuk ewallet/cards.
-     */
     protected function extractCheckoutUrlFromActions(array $actions): ?string
     {
         foreach ($actions as $a) {
@@ -307,7 +258,7 @@ class PaymentRepository
             if (!$val) continue;
 
             if (
-                str_contains($descriptor, 'CHECKOUT_URL')
+                str_contains($descriptor, 'WEB_URL')
                 || str_contains($type, 'CHECKOUT')
                 || filter_var($val, FILTER_VALIDATE_URL)
             ) {
@@ -317,10 +268,6 @@ class PaymentRepository
         return null;
     }
 
-    /**
-     * Ambil VA number dari actions.
-     * Contoh input: [{ type: 'PRESENT_TO_CUSTOMER', descriptor: 'VIRTUAL_ACCOUNT_NUMBER', value: '8808...' }]
-     */
     protected function extractVaNumbersFromActions(array $actions, ?string $channelCode): ?array
     {
         foreach ($actions as $a) {
@@ -337,10 +284,6 @@ class PaymentRepository
         return null;
     }
 
-    /**
-     * Ambil QR string dari actions (untuk QRIS dynamic).
-     * Beberapa implementasi mengirim descriptor 'QR_STRING' atau 'QR_CODE'.
-     */
     protected function extractQrisFromActions(array $actions): ?string
     {
         foreach ($actions as $a) {
@@ -354,9 +297,6 @@ class PaymentRepository
         return null;
     }
 
-    /**
-     * Kira-kira bank dari channel_code (BNI_VIRTUAL_ACCOUNT → BNI).
-     */
     protected function inferVaBankFromChannel(?string $channelCode): ?string
     {
         if (!$channelCode) return null;
