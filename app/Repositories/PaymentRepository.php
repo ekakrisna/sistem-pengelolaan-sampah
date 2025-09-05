@@ -19,7 +19,7 @@ class PaymentRepository
     protected Payment $payment;
 
     /** @var array<string> */
-    protected array $with = ['customer', 'transaction.items'];
+    protected array $with = ['customer', 'transaction.transaction_items'];
 
     /**
      * Payment constructor.

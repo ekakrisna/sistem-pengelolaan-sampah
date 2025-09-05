@@ -7,7 +7,6 @@ use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Unique;
 use Spatie\LaravelData\Attributes\Validation\Enum;
 use App\Enums\TransactionEnum;
-use App\Models\User;
 use Spatie\LaravelData\Attributes\Validation\Numeric;
 use Spatie\LaravelData\Attributes\Validation\Date;
 use Carbon\Carbon;
@@ -25,6 +24,7 @@ class TransactionData extends Data
         public int $customer_id,
         #[Max(191), Unique('transactions', 'number')]
         public ?string $number,
+
         #[Enum(TransactionEnum::class)]
         public TransactionEnum $status,
         #[Numeric]
@@ -55,9 +55,12 @@ class TransactionData extends Data
         public ?Carbon $deleted_at,
 
         public ?UserData $customer,
+
+        #[DataCollectionOf(PaymentData::class)]
+        public ?DataCollection $payments,
+
         #[DataCollectionOf(TransactionItemData::class)]
         public ?DataCollection $transaction_items,
-
     ) {}
 
 

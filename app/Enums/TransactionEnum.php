@@ -11,5 +11,4 @@ enum TransactionEnum: string
     case expired = 'expired';
     case canceled = 'canceled';
     case refunded = 'refunded';
-
 }

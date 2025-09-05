@@ -6,7 +6,6 @@ use App\Data\TransactionData;
 use App\Data\UserData;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CartRequest;
-use App\Http\Resources\Transaction\TransactionCollection;
 use App\Services\TransactionService;
 use App\Traits\ApiResponse;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -51,8 +50,8 @@ class TransactionController extends Controller
             'payment_method'
         ]);
         $pageSize = (int) $request->input('page_size', 10);
-        $pickups = $this->transactionService->paginate($filters, $pageSize);
-        $data = new TransactionCollection(TransactionData::collect($pickups));
+        $transactions = $this->transactionService->paginate($filters, $pageSize);
+        $data = TransactionData::paginatedResponse($transactions);
 
         return $this->successResponse(
             $data,
@@ -66,16 +65,6 @@ class TransactionController extends Controller
         return $this->successResponse(
             data: $data,
             message: 'Transaction retrieved successfully.'
-        );
-    }
-
-    public function store(Request $request): JsonResponse
-    {
-        $data = TransactionData::from($request)->toArray();
-        $transaction = $this->transactionService->save($data, $this->user);
-        return $this->successResponse(
-            data: TransactionData::from($transaction),
-            message: 'Transaction created successfully.'
         );
     }
 

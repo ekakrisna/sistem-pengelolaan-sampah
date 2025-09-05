@@ -20,7 +20,9 @@ class TransactionRepository
     protected array $with = [
         'payments',
         'customer',
-        'transaction_items',
+        'transaction_items.user_address.village.district.city.province',
+        'transaction_items.pickup_schedule.waste_type',
+        'transaction_items.pickup_fee.waste_type',
     ];
 
     /**
@@ -123,39 +125,20 @@ class TransactionRepository
         return $trx;
     }
 
-    /**
-     * @param array $filters
-     * @param int $pageSize
-     * @param ?UserData $user
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
-     * Pagination + Filters (role-aware)
-     *
-     * Supported filters:
-     * - search           : cari di payment.external_id / invoice_url
-     * - status           : payment.status
-     * - payment_method   : payment.payment_method
-     * - customer         : nama/email/phone customer
-     * - petugas          : nama/email/phone petugas
-     * - village          : pickup.schedule.village.name
-     * - waste_type       : pickup.schedule.wasteType (name/description)
-     * - admin            : pickup.schedule.admin (name/email)
-     * - start_date/end_date : by transaction.created_at
-     * - order_by         : oldest|desc (default desc)
-     */
+
     public function paginateWithFilters(array $filters = [], int $pageSize = 10, ?UserData $user = null)
     {
         $query = $this->transaction->newQuery()->with($this->with);
-
         // Filter by village
         if (!empty($filters['village'])) {
-            $query->whereHas('pickup.schedule.village', function ($q) use ($filters) {
+            $query->whereHas('transaction_items.pickup_schedule.village', function ($q) use ($filters) {
                 $q->where('name', 'like', '%' . $filters['village'] . '%');
             });
         }
 
         // Filter by waste type
         if (!empty($filters['waste_type'])) {
-            $query->whereHas('pickup.schedule.wasteType', function ($q) use ($filters) {
+            $query->whereHas('transaction_items.pickup_schedule.waste_type', function ($q) use ($filters) {
                 $q->where('name', 'like', '%' . $filters['waste_type'] . '%')
                     ->orWhere('description', 'like', '%' . $filters['waste_type'] . '%');
             });
@@ -163,24 +146,15 @@ class TransactionRepository
 
         // Filter by admin
         if (!empty($filters['admin'])) {
-            $query->whereHas('pickup.schedule.admin', function ($q) use ($filters) {
+            $query->whereHas('transaction_items.pickup_schedule.admin', function ($q) use ($filters) {
                 $q->where('name', 'like', '%' . $filters['admin'] . '%')
                     ->orWhere('email', 'like', '%' . $filters['admin'] . '%');
             });
         }
 
-        // Filter by payment status
+        // Filter by trasaction status
         if (!empty($filters['status'])) {
-            $query->whereHas('payment', function ($q) use ($filters) {
-                $q->where('status', $filters['status']);
-            });
-        }
-
-        // Filter by payment method
-        if (!empty($filters['payment_method'])) {
-            $query->whereHas('payment', function ($q) use ($filters) {
-                $q->where('payment_method', $filters['payment_method']);
-            });
+            $query->where('status', $filters['status']);
         }
 
         // Filter by transaction date range
@@ -782,7 +756,7 @@ class TransactionRepository
                     ? $it->pickup_schedule->waste_type->name
                     : '');
 
-            $key = $wasteTypeId ? "WT{$wasteTypeName}#{$wasteTypeId}" : 'WT#unknown';
+            $key = $wasteTypeId ? "WT-{$wasteTypeName}-{$wasteTypeId}" : 'WT-unknown';
 
             $wasteTypeCounts[$key] = ($wasteTypeCounts[$key] ?? 0) + (int) $it->qty;
         }
@@ -791,7 +765,7 @@ class TransactionRepository
         // Misal: "WT#3:2x, WT#5:1x"
         $wasteSummary = [];
         foreach ($wasteTypeCounts as $key => $qty) {
-            $wasteSummary[] = "{$key}:{$qty}x";
+            $wasteSummary[] = "{$key}-{$qty}x";
         }
         $wastePart = empty($wasteSummary) ? '' : ' (' . implode(', ', $wasteSummary) . ')';
 

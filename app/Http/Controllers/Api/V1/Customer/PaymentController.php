@@ -45,7 +45,7 @@ class PaymentController extends Controller
                 $pageSize,
                 $this->user
             );
-            $data = TransactionData::paginatedResponse($payments);
+            $data = PaymentData::paginatedResponse($payments);
 
             return $this->successResponse(
                 data: $data,
