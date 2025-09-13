@@ -30,6 +30,17 @@ class UserAddressSeeder extends Seeder
             'province_code' => $village->district->city->province->code,
         ]);
 
+        $village = Village::with(['district.city.province'])->findOrFail('1101012002');
+        $customer = User::where('email', 'customer@lokabersih.com')->firstOrFail();
+
+        UserAddress::factory()->create([
+            'user_id'       => $customer->id,
+            'village_code'  => $village->code,
+            'district_code' => $village->district->code,
+            'city_code'     => $village->district->city->code,
+            'province_code' => $village->district->city->province->code,
+        ]);
+
         UserAddress::factory()->count(40)->create();
     }
 }

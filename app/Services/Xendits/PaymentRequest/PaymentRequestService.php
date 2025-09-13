@@ -2,6 +2,7 @@
 
 namespace App\Services\Xendits\PaymentRequest;
 
+use App\Data\SplitRule\FeeConfigData;
 use App\Data\Xendit\PaymentRequest\PaymentRequestListQueryData;
 use App\Data\Xendit\PaymentRequest\PaymentsApiPayData;
 use App\Services\Xendits\Http\XenditService;
@@ -59,5 +60,17 @@ class PaymentRequestService extends XenditService
     public function updatePaymentRequest(string $paymentRequestId, PaymentsApiPayData $data): array
     {
         return $this->request('PATCH', "/v3/payment_requests/{$paymentRequestId}", $data->toPayload());
+    }
+
+
+    /**
+     * Create Split Rule
+     *
+     * @param FeeConfigData $data
+     * @return array
+     */
+    public function createSplitRule(FeeConfigData $data): array
+    {
+        return $this->post('/split_rules', $data->toArray());
     }
 }

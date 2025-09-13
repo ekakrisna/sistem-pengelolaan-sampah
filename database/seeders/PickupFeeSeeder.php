@@ -22,6 +22,14 @@ class PickupFeeSeeder extends Seeder
             'village_code' => '1101012001',
             'waste_type_id' => 1,
             'amount' => 10000,
+            'admin_id' => 2
+        ]);
+
+        PickupFee::factory()->create([
+            'village_code' => '1101012002',
+            'waste_type_id' => 2,
+            'amount' => 20000,
+            'admin_id' => 3
         ]);
 
         PickupFee::factory()->count(50)->create();

@@ -149,7 +149,8 @@ class PaymentRepository
         array $resp,
         CarbonInterface $expiresAt,
         ?string $idempotencyKey = null,
-        ?string $forcedForUserId = null
+        ?string $forcedForUserId = null,
+        ?string $splitRuleId = null
     ): array {
         $prId        = $resp['payment_request_id'] ?? $resp['id'] ?? null;
         $businessId  = $resp['business_id'] ?? $resp['xendit_account_id'] ?? null;
@@ -184,18 +185,19 @@ class PaymentRepository
             'amount'                    => (float) $requestAmt,
             'currency'                  => $trx->currency ?? 'IDR',
 
-            'status'                    => $paymentStatus,                // mapped enum
-            'channel'                   => $channelCode,                  // simpan apa adanya
-            'method_code'               => null,                          // optional
+            'status'                    => $paymentStatus,
+            'channel'                   => $channelCode,
+            'method_code'               => null,
             'reference_id'              => $referenceId,
-            'idempotency_key'           => $idempotencyKey,                         // set di Http layer jika perlu
+            'idempotency_key'           => $idempotencyKey,
             'xendit_account_id'         => $accountId,
+            'split_rule_id'             => $splitRuleId,
 
             'xendit_payment_request_id' => $prId,
             'xendit_charge_id'          => null,
             'xendit_invoice_id'         => null,
 
-            'va_numbers'                => $vaNumbersData ?: null,        // array of {number, bank?}
+            'va_numbers'                => $vaNumbersData ?: null,
             'qris_qr_string'            => $qrisQrString,
             'checkout_url'              => $checkoutUrl,
             'ewallet_info'              => null,

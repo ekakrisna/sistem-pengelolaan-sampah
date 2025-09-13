@@ -26,6 +26,18 @@ class WasteTypeSeeder extends Seeder
             ['B3', 'Bahan Berbahaya & Beracun seperti baterai, oli.'],
         ];
 
+        WasteType::factory()->create([
+            'name' => $types[array_rand($types)][0],
+            'description' => 'Sampah mudah terurai seperti sisa makanan dan daun.',
+            'admin_id' => 2
+        ]);
+
+        WasteType::factory()->create([
+            'name' => $types[array_rand($types)][0],
+            'description' => 'Sampah sulit terurai seperti plastik, botol, dan kaleng.',
+            'admin_id' => 3
+        ]);
+
         foreach ($types as [$name, $desc]) {
             WasteType::firstOrCreate([
                 'name' => $name,
@@ -35,6 +47,6 @@ class WasteTypeSeeder extends Seeder
             ]);
         }
 
-        WasteType::factory(20)->create();
+        // WasteType::factory(20)->create();
     }
 }

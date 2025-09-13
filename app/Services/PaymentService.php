@@ -3,18 +3,17 @@
 namespace App\Services;
 
 use App\Data\ChannelExpiry;
+use App\Data\SplitRule\FeeConfigData;
 use App\Data\UserData;
 use App\Data\Xendit\Common\ChannelPropsData;
-use App\Data\Xendit\Common\Customer\CustomerData;
-use App\Data\Xendit\Common\Customer\CustomerIndividualDetailData;
 use App\Data\Xendit\PaymentRequest\PaymentsApiPayData;
 use App\Enums\Xendit\Common\CaptureMethod;
 use App\Enums\Xendit\Common\ChannelCode;
 use App\Enums\Xendit\Common\Country;
 use App\Enums\Xendit\Common\Currency;
-use App\Enums\Xendit\Common\CustomerType;
 use App\Models\Payment;
 use App\Models\Transaction;
+use App\Models\TransactionItem;
 use App\Repositories\PaymentRepository;
 use App\Repositories\TransactionRepository;
 use App\Services\Xendits\PaymentRequest\PaymentPayService;
@@ -23,6 +22,7 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 
 class PaymentService
@@ -240,7 +240,7 @@ class PaymentService
             $idempKey    = $this->makeIdempotencyKey($trx, $channel, $expiresAt);
 
             // === NEW: Resolve subaccount & split ===
-            $forUserId   = $this->resolveForUserId($trx, $request);
+            // $forUserId   = $this->resolveForUserId($trx, $request);
             $splitRuleId = $this->resolveSplitRuleId($trx, $request);
 
             // kalau sudah pernah dibuat (retry) => kembalikan existing
@@ -256,17 +256,17 @@ class PaymentService
             $xenditResp = $this->xenditPaymentPay->create(
                 $dto,
                 idempotencyKey: $idempKey,
-                forUserId: $forUserId,
+                // forUserId: $forUserId,
                 splitRuleId: $splitRuleId
             );
 
             // 5) Simpan ke payments + update transaksi ke pending (strict by columns)
             $saved = $this->paymentRepository->createFromXenditStrict(
-                $trx,
-                $xenditResp,
-                $expiresAt,
-                $idempKey,
-                $forUserId
+                trx: $trx,
+                resp: $xenditResp,
+                expiresAt: $expiresAt,
+                splitRuleId: $splitRuleId,
+                idempotencyKey: $idempKey
             );
 
             return [
@@ -291,36 +291,211 @@ class PaymentService
         ]);
     }
 
-    protected function resolveForUserId(Transaction $trx, array $request): ?string
+    protected function resolveForUserId(TransactionItem $it): ?string
     {
-        // 1) Hard override dari client (jika kamu izinkan)
-        if (!empty($request['for_user_id'])) {
-            return (string) $request['for_user_id'];
+        // Prioritas lewat pickup_fee -> waste_type -> admin
+        if ($it->relationLoaded('pickup_fee') && $it->pickup_fee && $it->pickup_fee->relationLoaded('waste_type') && $it->pickup_fee->waste_type) {
+            return $it->pickup_fee->waste_type->admin ?? null;
         }
 
-        // 2) Dari metadata transaksi (mis: ditetapkan saat cart/checkout)
-        $metaFor = data_get($trx->meta, 'xendit_for_user_id');
-        if (!empty($metaFor)) {
-            return (string) $metaFor;
+        // Atau langsung lewat schedule -> admin
+        if ($it->relationLoaded('pickup_schedule') && $it->pickup_schedule) {
+            return $it->pickup_schedule->admin ?? null;
         }
 
-        // 3) Dari entitas internal (contoh: admin yang mengelola village/waste_type punya subaccount)
-        //    Sesuaikan dengan relasi & kolom yang kamu punya.
-        if (method_exists($trx, 'admin') && !empty($trx->admin?->xendit_account_id)) {
-            return (string) $trx->admin->xendit_account_id;
+        // Jika relasi belum diload, load minimal
+        $it->loadMissing('pickup_fee.waste_type.admin', 'pickup_schedule.admin');
+
+        if ($it->pickup_fee && $it->pickup_fee->waste_type && $it->pickup_fee->waste_type->admin) {
+            return $it->pickup_fee->waste_type->admin;
         }
 
-        // 4) Default: NULL → pakai main account
+        if ($it->pickup_schedule && $it->pickup_schedule->admin) {
+            return $it->pickup_schedule->admin;
+        }
+
         return null;
     }
 
-    protected function resolveSplitRuleId(Transaction $trx, array $request): ?string
+    /**
+     * Bangun Split Rule di Xendit berbasis isi cart:
+     * - route percent ke masing-masing admin proporsional thd nominal per-admin
+     * - opsional: platform fee (flat/percent) ke platform_xendit_for_user_id
+     *
+     * $options:
+     * - name: string|null
+     * - description: string|null
+     * - platform_xendit_for_user_id: string|null
+     * - platform_flat_amount: int|null (IDR)
+     * - platform_percent_amount: float|null (0..100)
+     * - currency: string (default 'IDR')
+     */
+    public function resolveSplitRuleId(Transaction $trx, array $options = []): ?string
     {
-        // Opsional: kalau kamu pakai split
-        if (!empty($request['split_rule_id'])) {
-            return (string) $request['split_rule_id'];
+        // 1) group per admin (gunakan helper yg sudah ada)
+        $groups = $this->groupItemsByAdmin($trx);
+
+        if (empty($groups)) {
+            // tidak ada item yg bisa dibagi → tidak perlu split rule
+            return null;
         }
-        $metaSplit = data_get($trx->meta, 'xendit_split_rule_id');
-        return $metaSplit ? (string) $metaSplit : null;
+
+        // 2) alokasi diskon/tax/surcharge proporsional → nominal per-admin
+        $allocs = $this->allocateAdjustmentsPerGroup($trx, $groups);
+        $total  = array_sum(array_map(fn($a) => (float) $a['amount'], $allocs));
+
+        if ($total <= 0) {
+            throw new InvalidArgumentException('Total amount per-admin <= 0; unable to create split rule.');
+        }
+        // 3) siapkan platform fee (opsional)
+        $currency        = (string) ($options['currency'] ?? 'IDR');
+        $platformForUser = (string) ($options['platform_xendit_for_user_id'] ?? config('xendit.platform_for_user_id'));
+        $platFlat        = (int)    ($options['platform_flat_amount'] ?? 0);
+        $platPercent     = (float)  ($options['platform_percent_amount'] ?? 0.0);
+
+        $routes = [];
+
+        if ($platformForUser) {
+            if ($platFlat > 0) {
+                $routes[] = [
+                    'flat_amount'            => $platFlat,
+                    'currency'               => $currency,
+                    'destination_account_id' => $platformForUser,
+                    'reference_id'           => "plat-flat-{$trx->id}-" . Str::uuid()->toString(),
+                ];
+            }
+            if ($platPercent > 0) {
+                // pastikan aman di rentang 0..100
+                $routes[] = [
+                    'percent_amount'         => max(0, min(100, $platPercent)),
+                    'currency'               => $currency,
+                    'destination_account_id' => $platformForUser,
+                    'reference_id'           => "plat-percent-{$trx->id}-" . Str::uuid()->toString(),
+                ];
+            }
+        }
+
+        // 4) hitung porsi persen utk masing-masing admin
+        //    total persen untuk merchant harus = 100 - platformPercent (kalau ada)
+        $percentBudget = 100.0 - ($platPercent > 0 ? max(0, min(100, $platPercent)) : 0.0);
+        $admins        = array_keys($groups);
+        $n             = count($admins);
+        // agar rounding rapi, admin terakhir dapat sisa persen
+        $sumPerc = 0.0;
+        foreach ($admins as $idx => $adminId) {
+            $admin = $groups[$adminId]['admin'];
+            $dest  = (string) ($admin->xendit_for_user_id ?? '');
+            if ($dest === '') {
+                throw new InvalidArgumentException("Admin #{$admin->id} missing xendit_for_user_id.");
+            }
+
+            $amount = (float) $allocs[$adminId]['amount'];
+            // $share  = $amount / $total;
+            // $perc   = ($idx === $n - 1)
+            //     ? max(0.0, $percentBudget - $sumPerc)
+            //     : round($percentBudget * $share, 2);
+
+            // $sumPerc += ($idx === $n - 1) ? 0.0 : $perc;
+            // dd($sumPerc);
+
+            // $amount = (float) $allocs[$adminId]['amount'];
+            // $share  = $amount / $total;
+            // $perc   = ($idx === $n - 1)
+            //     ? max(0.0, $percentBudget - $sumPerc)
+            //     : round($percentBudget * $share, 2);
+
+            // $sumPerc += ($idx === $n - 1) ? 0.0 : $perc;
+
+            // $admin = $groups[$adminId]['admin'];
+            // $dest  = (string) ($admin->xendit_for_user_id ?? '');
+            // if ($dest === '') {
+            //     throw new InvalidArgumentException("Admin #{$admin->id} does not have a xendit_for_user_id.");
+            // }
+
+            $routes[] = [
+                // 'percent_amount'         => $perc,
+                'flat_amount'            => $amount,
+                'currency'               => $currency,
+                'destination_account_id' => $dest,
+                'reference_id'           => Str::upper("merchant-{$trx->id}-{$admin->id}-" . Str::uuid()->toString()),
+            ];
+        }
+
+        $name = preg_replace('/[^a-zA-Z0-9 ]/', '', ('Auto Split: ' . ($trx->number ?? $trx->id)) ?? 'Split Rule');
+        $description = preg_replace('/[^a-zA-Z0-9 ]/', '', ('Auto generated for transaction ' . ($trx->number ?? $trx->id)));
+
+        // 5) panggil Xendit: create split rule
+        $payload = [
+            'name'        => $options['name']        ?? $name,
+            'description' => $options['description'] ?? $description,
+            'routes'      => $routes,
+        ];
+
+        /** @var SplitRuleService $splitSvc */
+        // $splitSvc = app(SplitRuleService::class);
+        $data = FeeConfigData::from($payload);
+        $resp = $this->paymentRequestService->createSplitRule($data);
+
+        // Xendit balikin id split rule di salah satu key ini (bergantung versi API)
+        $splitRuleId = $resp['id'] ?? $resp['split_rule_id'] ?? null;
+        if (!$splitRuleId) {
+            throw new \RuntimeException('Failed to get split_rule_id from Xendit response.');
+        }
+        return (string) $splitRuleId;
+    }
+
+    protected function groupItemsByAdmin(Transaction $trx): array
+    {
+        $trx->loadMissing('transaction_items.pickup_fee.waste_type.admin', 'transaction_items.pickup_schedule.admin');
+
+        $groups = [];
+        foreach ($trx->transaction_items as $it) {
+            if (!in_array($it->item_type, ['pickup', 'other'], true)) continue;
+
+            $admin = $it->pickup_fee->admin
+                ?? $it->pickup_schedule->admin
+                ?? null;
+
+            if (!$admin || empty($admin->xendit_for_user_id)) {
+                throw new InvalidArgumentException("Admin or xendit_for_user_id is empty for item #{$it->id}");
+            }
+            $key = (string) $admin->id;
+            $groups[$key] ??= ['admin' => $admin, 'items' => collect()];
+            $groups[$key]['items']->push($it);
+        }
+
+        return $groups;
+    }
+
+    protected function allocateAdjustmentsPerGroup(Transaction $trx, array $groups): array
+    {
+        $baseSubtotal = (float) $trx->transaction_items()
+            ->whereIn('item_type', ['pickup', 'other'])
+            ->sum('line_total');
+
+        $totalDiscount  = (float) $trx->transaction_items()->where('item_type', 'discount')->sum('line_total');
+        $totalTax       = (float) $trx->transaction_items()->where('item_type', 'tax')->sum('line_total');
+        $totalSurcharge = (float) $trx->transaction_items()->where('item_type', 'surcharge')->sum('line_total');
+
+        $result = [];
+        foreach ($groups as $key => $g) {
+            $groupSubtotal = (float) $g['items']->sum('line_total');
+            $ratio         = $baseSubtotal > 0 ? ($groupSubtotal / $baseSubtotal) : 0.0;
+
+            $disc = $totalDiscount  * $ratio;
+            $tax  = $totalTax       * $ratio;
+            $surch = $totalSurcharge * $ratio;
+
+            $amount = max(0, $groupSubtotal - $disc + $tax + $surch);
+
+            $result[$key] = [
+                'amount'        => $amount,
+                'subtotal'      => $groupSubtotal,
+                'discount_part' => $disc,
+                'tax_part'      => $tax,
+                'surcharge_part' => $surch,
+            ];
+        }
+        return $result;
     }
 }

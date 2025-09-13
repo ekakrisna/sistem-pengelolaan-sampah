@@ -84,7 +84,8 @@ class Payment extends Model
 		'paid_at',
 		'failure_code',
 		'failure_message',
-		'xendit_data'
+		'xendit_data',
+		'split_rule_id'
 	];
 
 	public function customer()

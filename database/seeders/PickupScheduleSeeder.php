@@ -22,6 +22,11 @@ class PickupScheduleSeeder extends Seeder
             'village_code' => '1101012001',
         ]);
 
+        PickupSchedule::factory()->create([
+            'waste_type_id' => 2,
+            'village_code' => '1101012002',
+        ]);
+
         PickupSchedule::factory()->count(30)->create();
     }
 }
