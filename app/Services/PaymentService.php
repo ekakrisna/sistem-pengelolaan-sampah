@@ -241,7 +241,7 @@ class PaymentService
 
             // === NEW: Resolve subaccount & split ===
             // $forUserId   = $this->resolveForUserId($trx, $request);
-            $splitRuleId = $this->resolveSplitRuleId($trx, $request);
+            [$splitRuleId, $routesPlan] = $this->resolveSplitRuleId($trx, $request);
 
             // kalau sudah pernah dibuat (retry) => kembalikan existing
             if ($existing = $this->paymentRepository->findByIdempotencyKey($idempKey)) {
@@ -266,7 +266,8 @@ class PaymentService
                 resp: $xenditResp,
                 expiresAt: $expiresAt,
                 splitRuleId: $splitRuleId,
-                idempotencyKey: $idempKey
+                idempotencyKey: $idempKey,
+                routesPlan: $routesPlan
             );
 
             return [
@@ -283,8 +284,8 @@ class PaymentService
         CarbonInterface $expiresAt
     ): string {
         return implode(':', [
-            'pr',
-            $trx->number ?: ('trx' . $trx->id),
+            'PR',
+            $trx->number ?: ('TRX' . $trx->id),
             $channel->value,
             (string) (int) round($trx->total * 100),
             (string) $expiresAt->getTimestamp(),
@@ -330,7 +331,7 @@ class PaymentService
      * - platform_percent_amount: float|null (0..100)
      * - currency: string (default 'IDR')
      */
-    public function resolveSplitRuleId(Transaction $trx, array $options = []): ?string
+    public function resolveSplitRuleId(Transaction $trx, array $options = []): ?array
     {
         // 1) group per admin (gunakan helper yg sudah ada)
         $groups = $this->groupItemsByAdmin($trx);
@@ -377,11 +378,12 @@ class PaymentService
 
         // 4) hitung porsi persen utk masing-masing admin
         //    total persen untuk merchant harus = 100 - platformPercent (kalau ada)
-        $percentBudget = 100.0 - ($platPercent > 0 ? max(0, min(100, $platPercent)) : 0.0);
+        // $percentBudget = 100.0 - ($platPercent > 0 ? max(0, min(100, $platPercent)) : 0.0);
         $admins        = array_keys($groups);
-        $n             = count($admins);
+        // $n             = count($admins);
         // agar rounding rapi, admin terakhir dapat sisa persen
-        $sumPerc = 0.0;
+        // $sumPerc = 0.0;
+        $routesPlan = [];
         foreach ($admins as $idx => $adminId) {
             $admin = $groups[$adminId]['admin'];
             $dest  = (string) ($admin->xendit_for_user_id ?? '');
@@ -419,6 +421,20 @@ class PaymentService
                 'destination_account_id' => $dest,
                 'reference_id'           => Str::upper("merchant-{$trx->id}-{$admin->id}-" . Str::uuid()->toString()),
             ];
+
+            $routesPlan[] = [
+                'admin_id'               => (int) $admin->id,
+                'destination_account_id' => $dest,
+                'currency'               => $currency,
+                'flat_amount'            => $amount, // rupiah
+                'reference_id'           => Str::upper("merchant-{$trx->id}-{$admin->id}-" . Str::uuid()->toString()),
+                'meta'                   => [
+                    'group_subtotal' => $allocs[$adminId]['subtotal'],
+                    'disc_part'      => $allocs[$adminId]['discount_part'],
+                    'tax_part'       => $allocs[$adminId]['tax_part'],
+                    'surcharge_part' => $allocs[$adminId]['surcharge_part'],
+                ],
+            ];
         }
 
         $name = preg_replace('/[^a-zA-Z0-9 ]/', '', ('Auto Split: ' . ($trx->number ?? $trx->id)) ?? 'Split Rule');
@@ -441,7 +457,8 @@ class PaymentService
         if (!$splitRuleId) {
             throw new \RuntimeException('Failed to get split_rule_id from Xendit response.');
         }
-        return (string) $splitRuleId;
+
+        return [$splitRuleId, $routesPlan];
     }
 
     protected function groupItemsByAdmin(Transaction $trx): array

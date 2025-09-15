@@ -64,7 +64,7 @@ class PickupController extends Controller
     public function store(PickupData $data): PickupData|JsonResponse
     {
         try {
-            $data = PickupData::from($this->pickupService->save($data->all(), $this->user));
+            $data = PickupData::from($this->pickupService->save($data, $this->user));
             return $this->successResponse($data, 'Pickup successfully created.');
         } catch (\Exception $exception) {
             report($exception);
@@ -76,7 +76,8 @@ class PickupController extends Controller
     public function cancel(int $id): PickupData|JsonResponse
     {
         try {
-            $data = PickupData::from($this->pickupService->update(['status' => PickupEnum::canceled->value], $id, $this->user));
+            $payload = PickupData::from(...[$this->pickupService->getById($id, $this->user), 'status' => PickupEnum::canceled->value]);
+            $data = PickupData::from($this->pickupService->update($payload, $id, $this->user));
             return $this->successResponse($data, 'Pickup schedule successfully updated.');
         } catch (NotFoundHttpException $e) {
             return $this->errorResponse(

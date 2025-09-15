@@ -164,19 +164,17 @@ class XenditWebhookService extends XenditService
      */
     protected function resolveIdempotencyKey(Request $request, array $payload, string $rawBody): string
     {
-        $h = $request->headers;
-
+        $event = strtolower((string)($payload['event'] ?? ''));
         $candidates = array_filter([
-            $h->get('x-idempotency-key'),
-            $h->get('Idempotency-Key'),
-            Arr::get($payload, 'data.id'),
-            Arr::get($payload, 'id'),
-            Arr::get($payload, 'payment_request_id'),
-        ], static fn($v) => is_string($v) && $v !== '');
+            $request->headers->get('x-idempotency-key'),
+            $request->headers->get('Idempotency-Key'),
+            data_get($payload, 'data.id'),
+            data_get($payload, 'id'),
+            data_get($payload, 'payment_request_id'),
+        ], fn($v) => is_string($v) && $v !== '');
 
         $key = $candidates[0] ?? sha1($rawBody);
-
-        return (string) $key;
+        return $event . ':' . $key;
     }
 
     /** ---------- helpers ---------- */

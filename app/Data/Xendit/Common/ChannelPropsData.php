@@ -8,18 +8,24 @@ use App\Data\Xendit\Common\Card\RecurringConfigurationData;
 use App\Enums\Xendit\Common\ChannelCode;
 use App\Models\Transaction;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Spatie\LaravelData\Data;
 
 class ChannelPropsData extends Data
 {
 
-    private const DEFAULT_RETURN_URLS = [
-        'success_return_url' => '/v1/success',
-        'failure_return_url' => '/v1/failure',
-        'pending_return_url' => '/v1/pending',
-        'cancel_return_url'  => '/v1/cancel',
-    ];
+    private static function defaultReturnUrls(): array
+    {
+        $version = config('app.api.version', 'v1');
+
+        return [
+            'success_return_url' => "/api/{$version}/success/",
+            'failure_return_url' => "/api/{$version}/failure/",
+            'pending_return_url' => "/api/{$version}/pending/",
+            'cancel_return_url'  => "/api/{$version}/cancel/",
+        ];
+    }
 
     /** Keys allowed by ChannelPropsData */
     private const ALLOWED_KEYS = [
@@ -192,10 +198,10 @@ class ChannelPropsData extends Data
             }
         }
 
-        foreach (self::DEFAULT_RETURN_URLS as $key => $path) {
+        foreach (self::defaultReturnUrls() as $key => $path) {
             if (empty($props[$key])) {
                 $base = rtrim(config('app.url', env('APP_URL', 'http://localhost:8000')), '/');
-                $props[$key] = $base . $path;
+                $props[$key] = $base . $path . Str::lower($trx->number);
             }
         }
 
@@ -203,7 +209,6 @@ class ChannelPropsData extends Data
             $props['skip_three_ds'] = self::toBoolOrNull($props['skip_three_ds']);
         }
 
-        // Trim common simple strings
         foreach (
             [
                 'display_name',

@@ -3,7 +3,6 @@
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Customer\CatalogController;
 use App\Http\Controllers\Api\V1\Customer\PaymentController as CustomerPaymentController;
-use App\Http\Controllers\Api\V1\Customer\PaymentMethodController;
 use App\Http\Controllers\Api\V1\Customer\PickupController as CustomerPickupController;
 use App\Http\Controllers\Api\V1\Customer\ProfileController;
 use App\Http\Controllers\Api\V1\Customer\TransactionController as CustomerTransactionController;
@@ -31,8 +30,9 @@ Route::prefix(config('app.api.version'))
         Route::post('/login', [AuthController::class, 'login'])->name('login');
         Route::post('/register', [AuthController::class, 'register'])->name('register');
 
-        Route::prefix('xendit')->name('xendit.')->group(function () {
-            Route::post('webhook', [WebhookController::class, 'handle']);
+        Route::prefix('webhook')->name('webhook.')->group(function () {
+            Route::post('payment', [WebhookController::class, 'payment']);
+            Route::post('split-rule', [WebhookController::class, 'split']);
         });
 
         Route::middleware('auth:sanctum')->group(function () {
@@ -61,12 +61,12 @@ Route::prefix(config('app.api.version'))
                 Route::get('pickup-fees', [CatalogController::class, 'fees']);
 
                 // Pickups (request & list)
-                Route::prefix('pickups')->name('pickups.')->group(function () {
-                    Route::get('/', [CustomerPickupController::class, 'index']);
-                    Route::post('/', [CustomerPickupController::class, 'store']);
-                    Route::get('{id}', [CustomerPickupController::class, 'show']);
-                    Route::delete('{id}', [CustomerPickupController::class, 'cancel']);
-                });
+                // Route::prefix('pickups')->name('pickups.')->group(function () {
+                //     Route::get('/', [CustomerPickupController::class, 'index']);
+                //     Route::post('/', [CustomerPickupController::class, 'store']);
+                //     Route::get('{id}', [CustomerPickupController::class, 'show']);
+                //     Route::delete('{id}', [CustomerPickupController::class, 'cancel']);
+                // });
 
                 // Payments
                 Route::prefix('payments')->name('payments.')->group(function () {

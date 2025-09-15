@@ -11,6 +11,7 @@ enum StatusTransactionEnum: string
     case EXPIRED = 'expired';
     case CANCELED = 'canceled';
     case REFUNDED = 'refunded';
+    case FAILED = 'failed';
 
     public static function values(): array
     {

@@ -4,10 +4,13 @@ namespace App\Repositories;
 
 use App\Data\UserData;
 use App\Enums\StatusPaymentEnum;
+use App\Enums\StatusPaymentSplitRouteEnum;
 use App\Enums\StatusTransactionEnum;
 use App\Enums\Xendit\Common\ChannelCode;
+use App\Enums\Xendit\Platform\ListAccounts\Status;
 use App\Models\Transaction;
 use App\Models\Payment;
+use App\Models\PaymentSplitRoute;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 
@@ -150,7 +153,9 @@ class PaymentRepository
         CarbonInterface $expiresAt,
         ?string $idempotencyKey = null,
         ?string $forcedForUserId = null,
-        ?string $splitRuleId = null
+        ?string $splitRuleId = null,
+        array $routesPlan = []
+
     ): array {
         $prId        = $resp['payment_request_id'] ?? $resp['id'] ?? null;
         $businessId  = $resp['business_id'] ?? $resp['xendit_account_id'] ?? null;
@@ -215,6 +220,23 @@ class PaymentRepository
             'expires_at' => $expiresAt,
             'description' => $trx->description ?: $desc,
         ]);
+
+        foreach ($routesPlan as $r) {
+            PaymentSplitRoute::create([
+                'payment_id'            => $payment->id,
+                'transaction_id'        => $trx->id,
+                'admin_id'              => $r['admin_id'] ?? null,
+                'currency'              => $r['currency'] ?? 'IDR',
+                'flat_amount'           => $r['flat_amount'] ?? null,
+                'percent_amount'        => $r['percent_amount'] ?? null,
+                'destination_account_id' => $r['destination_account_id'],
+                'reference_id'          => $r['reference_id'],
+                'split_rule_id'         => $splitRuleId,
+                'status'                => StatusPaymentSplitRouteEnum::APPLIED->value,
+                'applied_at'            => CarbonImmutable::now(),
+                'meta'                  => $r['meta'] ?? null,
+            ]);
+        }
 
         return [
             'payment'     => $payment->fresh(),
