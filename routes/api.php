@@ -35,6 +35,13 @@ Route::prefix(config('app.api.version'))
             Route::post('split-rule', [WebhookController::class, 'split']);
         });
 
+        Route::prefix('return')->name('return.')->group(function () {
+            Route::get('success/{reference}', [WebhookController::class, 'successByReference'])->name('success');
+            Route::get('failure/{reference}', [WebhookController::class, 'failureByReference'])->name('failure');
+            Route::get('pending/{reference}', [WebhookController::class, 'pendingByReference'])->name('pending');
+            Route::get('cancel/{reference}',  [WebhookController::class, 'cancelByReference'])->name('cancel');
+        });
+
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
             Route::get('/me', [AuthController::class, 'me'])->name('me');

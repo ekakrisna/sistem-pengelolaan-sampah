@@ -64,7 +64,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
                         return errorResponse(
                             name: 'Error::ModelNotFound',
-                            message: "{$model} tidak ditemukan.",
+                            message: "{$model} not found.",
                             statusCode: Response::HTTP_NOT_FOUND
                         );
                     }
@@ -78,7 +78,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 if ($e instanceof ModelNotFoundException) {
                     return errorResponse(
                         name: 'Error::ModelNotFound',
-                        message: class_basename($e->getModel()) . ' tidak ditemukan.',
+                        message: class_basename($e->getModel()) . ' not found.',
                         statusCode: Response::HTTP_NOT_FOUND
 
                     );

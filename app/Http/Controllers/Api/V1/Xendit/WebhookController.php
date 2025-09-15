@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\PaymentSplitRoute;
 use App\Models\Transaction;
+use App\Services\Xendits\PaymentRequest\PaymentRequestService;
 use App\Services\Xendits\Webhook\XenditWebhookService;
 use App\Traits\ApiResponse;
 use Carbon\CarbonImmutable;
@@ -16,13 +17,15 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class WebhookController extends Controller
 {
     use ApiResponse;
 
     public function __construct(
-        protected XenditWebhookService $webhooks
+        protected XenditWebhookService $webhooks,
+        private PaymentRequestService $paymentRequestService
     ) {}
 
     public function payment(Request $request): JsonResponse
@@ -118,6 +121,126 @@ class WebhookController extends Controller
         }
     }
 
+    public function successByReference(Request $request, string $reference): JsonResponse
+    {
+        $payment = $this->findPayment(null, $reference);
+        return $this->handle(
+            $request,
+            $payment,
+            StatusPaymentEnum::SUCCEEDED,
+            StatusTransactionEnum::PAID,
+            true
+        );
+    }
+
+    public function failureByReference(Request $request, string $reference): JsonResponse
+    {
+        $payment = $this->findPayment(null, $reference);
+        return $this->handle(
+            $request,
+            $payment,
+            StatusPaymentEnum::FAILED,
+            StatusTransactionEnum::FAILED,
+            false
+        );
+    }
+
+    public function pendingByReference(Request $request, string $reference): JsonResponse
+    {
+        $payment = $this->findPayment(null, $reference);
+        return $this->handle(
+            $request,
+            $payment,
+            StatusPaymentEnum::AWAITING_PAYMENT,
+            StatusTransactionEnum::PENDING,
+            false
+        );
+    }
+
+    public function cancelByReference(Request $request, string $reference): JsonResponse
+    {
+        $payment = $this->findPayment(null, $reference);
+        return $this->handle(
+            $request,
+            $payment,
+            StatusPaymentEnum::CANCELED,
+            StatusTransactionEnum::CANCELED,
+            false
+        );
+    }
+
+    protected function handle(
+        Request $request,
+        Payment $payment,
+        StatusPaymentEnum $targetPay,
+        StatusTransactionEnum $targetTrx,
+        bool $mustVerifyRemote
+    ): JsonResponse {
+        // Jika kamu masih pakai signed URL, biarkan validasi ini.
+        // Kalau sekarang URL sudah plain (tanpa signature), hilangkan baris ini:
+        // abort_unless($request->hasValidSignature(), 403, 'Invalid or expired link');
+
+        // Verifikasi remote saat success (anti-spoof)
+        if ($mustVerifyRemote && $payment->xendit_payment_request_id) {
+            $remote = $this->paymentRequestService->getById($payment->xendit_payment_request_id);
+            $remoteStatus = strtoupper((string) ($remote['status'] ?? ''));
+            if ($remoteStatus !== 'SUCCEEDED') {
+                return $this->successResponse([
+                    'payment_id'      => $payment->id,
+                    'transaction_id'  => $payment->transaction_id,
+                    'transaction_no'  => optional($payment->transaction)->number,
+                    'local_status'    => $payment->status,
+                    'remote_status'   => $remoteStatus,
+                ], 'Payment not confirmed as succeeded yet.');
+            }
+        }
+
+        $finals = [
+            StatusPaymentEnum::SUCCEEDED->value,
+            StatusPaymentEnum::FAILED->value,
+            StatusPaymentEnum::EXPIRED->value,
+            StatusPaymentEnum::CANCELED->value,
+            StatusPaymentEnum::REFUNDED->value,
+        ];
+        $now = CarbonImmutable::now();
+
+        DB::transaction(function () use ($payment, $targetPay, $targetTrx, $finals, $now, $request) {
+            if (!($payment->status === $targetPay->value && in_array($payment->status, $finals, true))) {
+                $updates = [
+                    'status'      => $targetPay->value,
+                    'xendit_data' => array_merge((array) $payment->xendit_data ?? [], [
+                        '_return_callback' => [
+                            'at'    => $now->toIso8601String(),
+                            'path'  => $request->path(),
+                            'query' => $request->query(),
+                        ],
+                    ]),
+                ];
+                if ($targetPay === StatusPaymentEnum::SUCCEEDED && is_null($payment->paid_at)) {
+                    $updates['paid_at'] = $now;
+                }
+                $payment->update($updates);
+            }
+
+            /** @var Transaction|null $trx */
+            $trx = $payment->transaction()->lockForUpdate()->first();
+            if ($trx && $trx->status !== $targetTrx->value) {
+                $trxUpdate = ['status' => $targetTrx->value];
+                if ($targetTrx === StatusTransactionEnum::PAID) {
+                    $trxUpdate['expires_at'] = null;
+                }
+                $trx->update($trxUpdate);
+            }
+        });
+
+        $payment->refresh();
+        return $this->successResponse([
+            'payment_id'      => $payment->id,
+            'transaction_id'  => $payment->transaction_id,
+            'transaction_no'  => optional($payment->transaction)->number,
+            'status'          => $payment->status,
+        ], 'Return processed.');
+    }
 
     /** ---------------- Helpers ---------------- */
     protected function findPayment(?string $paymentRequestId, ?string $referenceId): ?Payment
@@ -131,10 +254,15 @@ class WebhookController extends Controller
         }
 
         if ($referenceId) {
-            return Payment::query()
-                ->where('reference_id', $referenceId)
+            $payment = Payment::query()
+                // pakai LOWER(reference_id) agar case-insensitive, aman untuk MySQL/PG
+                ->whereRaw('LOWER(reference_id) = ?', [$referenceId])
                 ->latest('id')
                 ->first();
+
+            abort_unless($payment, 404, 'Payment not found for reference.');
+
+            return $payment;
         }
 
         return null;

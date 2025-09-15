@@ -20,10 +20,10 @@ class ChannelPropsData extends Data
         $version = config('app.api.version', 'v1');
 
         return [
-            'success_return_url' => "/api/{$version}/success/",
-            'failure_return_url' => "/api/{$version}/failure/",
-            'pending_return_url' => "/api/{$version}/pending/",
-            'cancel_return_url'  => "/api/{$version}/cancel/",
+            'success_return_url' => "/api/{$version}/return/success/",
+            'failure_return_url' => "/api/{$version}/return/failure/",
+            'pending_return_url' => "/api/{$version}/return/pending/",
+            'cancel_return_url'  => "/api/{$version}/return/cancel/",
         ];
     }
 
