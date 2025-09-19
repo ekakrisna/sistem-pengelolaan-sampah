@@ -7,6 +7,7 @@ use App\Data\SplitRule\FeeConfigData;
 use App\Data\UserData;
 use App\Data\Xendit\Common\ChannelPropsData;
 use App\Data\Xendit\PaymentRequest\PaymentsApiPayData;
+use App\Enums\XenditStatusPaymentEnum as XPR;
 use App\Enums\Xendit\Common\CaptureMethod;
 use App\Enums\Xendit\Common\ChannelCode;
 use App\Enums\Xendit\Common\Country;
@@ -27,71 +28,36 @@ use InvalidArgumentException;
 
 class PaymentService
 {
-    /**
-     * @var PaymentRepository $paymentRepository
-     */
-    protected PaymentRepository $paymentRepository;
-    protected TransactionRepository $transactionRepository;
-    protected PaymentPayService $xenditPaymentPay;
-    protected PaymentRequestService $paymentRequestService;
-    /**
-     * DummyClass constructor.
-     *
-     * @param PaymentRepository $paymentRepository
-     */
     public function __construct(
-        PaymentRepository $paymentRepository,
-        TransactionRepository $transactionRepository,
-        PaymentPayService $xenditPaymentPay,
-        PaymentRequestService $paymentRequestService
+        protected PaymentRepository $paymentRepository,
+        protected TransactionRepository $transactionRepository,
+        protected PaymentPayService $xenditPaymentPay,
+        protected PaymentRequestService $paymentRequestService
     ) {
-        $this->paymentRepository    = $paymentRepository;
+        $this->paymentRepository = $paymentRepository;
         $this->transactionRepository = $transactionRepository;
-        $this->xenditPaymentPay     = $xenditPaymentPay;
+        $this->xenditPaymentPay = $xenditPaymentPay;
         $this->paymentRequestService = $paymentRequestService;
     }
 
-    /**
-     * Get all paymentRepository.
-     *
-     * @return String
-     */
+
     public function getAll(?UserData $user = null)
     {
         return $this->paymentRepository->all($user, $user);
     }
 
-    /**
-     * Get paymentRepository by id.
-     *
-     * @param $id
-     * @return String
-     */
-    public function getById(int $id, ?UserData $user = null)
+
+    public function getById(int $id, ?UserData $user = null): Payment
     {
         return $this->paymentRepository->getById($id, $user);
     }
 
-    /**
-     * Validate paymentRepository data.
-     * Store to DB if there are no errors.
-     *
-     * @param array $data
-     * @param ?UserData $user
-     * @return Payment
-     */
+
     public function save(array $data, ?UserData $user = null)
     {
         return $this->paymentRepository->save($data, $user);
     }
 
-    /**
-     * Update paymentRepository data
-     * Store to DB if there are no errors.
-     *
-     * @param array $data
-     * @return String
-     */
     public function update(array $data, int $id, ?UserData $user = null)
     {
         DB::beginTransaction();
@@ -106,12 +72,6 @@ class PaymentService
         }
     }
 
-    /**
-     * Delete paymentRepository by id.
-     *
-     * @param $id
-     * @return String
-     */
     public function deleteById(int $id, ?UserData $user = null)
     {
         DB::beginTransaction();
@@ -126,27 +86,11 @@ class PaymentService
         }
     }
 
-    /**
-     * @param array $filters
-     * @param int $pageSize
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
-     */
     public function paginate(array $filters, int $pageSize = 10, ?UserData $user = null)
     {
         return $this->paymentRepository->paginateWithFilters($filters, $pageSize, $user);
     }
 
-    /**
-     * Buat PaymentRequest ke Xendit menggunakan DTO PaymentsApiPayData (strict).
-     *
-     * @param array{
-     *   channel_code: string,                 // contoh: "ID_QRIS", "ID_DANA", "ID_BRI_VA", ...
-     *   channel_properties?: array,           // sesuai kebutuhan channel (mobile_number/qr/va/etc)
-     *   metadata?: array
-     * } $request
-     *
-     * @return array{payment: \App\Models\Payment, transaction: \App\Models\Transaction, xendit: array}
-     */
     public function createPaymentRequest(int $transactionId, UserData $user, array $request): array
     {
         return DB::transaction(function () use ($transactionId, $user, $request) {
@@ -276,6 +220,92 @@ class PaymentService
                 'xendit'      => $xenditResp,
             ];
         });
+    }
+
+    /**
+     * Cancel payment (Xendit -> DB). Return [Payment $updated, array $xenditResp]
+     */
+    public function cancelPayment(Payment $payment): array
+    {
+        // Validasi lokal basic
+        if ($payment->paid_at) {
+            throw new InvalidArgumentException('Paid payment cannot be canceled.');
+        }
+        $prId = $payment->xendit_payment_request_id;
+        if (!$prId) {
+            throw new InvalidArgumentException('Missing Xendit payment_request_id on this payment.');
+        }
+
+        // 0) Ambil status PR dari gateway (source of truth)
+        $pr = $this->paymentRequestService->getById($prId);
+        $statusRaw = strtoupper((string) ($pr['status'] ?? ''));
+        $prStatus  = XPR::tryFrom($statusRaw);
+
+        if (!$prStatus) {
+            // status tak dikenal — jangan cancel, lempar error yang jelas
+            throw new InvalidArgumentException("Unknown payment request status: {$statusRaw}");
+        }
+
+        // 1) Hanya REQUIRES_ACTION & ACCEPTING_PAYMENTS yang dapat di-cancel lewat PR cancel endpoint
+        if (in_array($prStatus, [XPR::REQUIRES_ACTION, XPR::ACCEPTING_PAYMENTS], true)) {
+            $xCancel = $this->paymentRequestService->cancel($prId);
+
+            $updated = DB::transaction(function () use ($payment, $xCancel) {
+                return $this->paymentRepository
+                    ->applyCancellationFromGateway($payment, $xCancel, 'cancelled_by_user');
+            });
+
+            return [$updated, $xCancel];
+        }
+
+        // 2) Kalau sudah CANCELED/EXPIRED/FAILED di gateway → sinkronisasi lokal saja (no-op cancel)
+        if (in_array($prStatus, [XPR::CANCELED, XPR::EXPIRED, XPR::FAILED], true)) {
+            $updated = DB::transaction(function () use ($payment, $pr) {
+                return $this->paymentRepository
+                    ->applyCancellationFromGateway($payment, $pr, 'sync_from_gateway');
+            });
+            return [$updated, $pr];
+        }
+
+        // 3) AUTHORIZED → void payment (bukan cancel PR)
+        if ($prStatus === XPR::AUTHORIZED) {
+            if (!$this->paymentRequestService) {
+                throw new InvalidArgumentException('PaymentsService not configured for voiding AUTHORIZED payments.');
+            }
+
+            // Cari payment yang AUTHORIZED dari array PR['payments'] (jika ada)
+            $payments = $pr['payments'] ?? [];
+            $voidResp = null;
+
+            foreach ($payments as $p) {
+                $pid = $p['id'] ?? null;
+                $ps  = strtoupper((string)($p['status'] ?? ''));
+                if ($pid && $ps === XPR::AUTHORIZED->value) {
+                    $voidResp = $this->paymentRequestService->cancel($pid); // void
+                    break;
+                }
+            }
+
+            // Refresh PR setelah void
+            $refreshed = $this->paymentRequestService->getById($prId);
+
+            $updated = DB::transaction(function () use ($payment, $refreshed) {
+                return $this->paymentRepository
+                    ->applyCancellationFromGateway($payment, $refreshed, 'void_authorization');
+            });
+
+            return [$updated, ['payment_cancel' => $voidResp, 'payment_request' => $refreshed]];
+        }
+
+        // 4) SUCCEEDED → tidak bisa cancel (sudah terbayar)
+        if ($prStatus === XPR::SUCCEEDED) {
+            throw new InvalidArgumentException('Payment request already paid; cannot cancel.');
+        }
+
+        // 5) Status lain (yang tidak didukung cancel oleh API)
+        throw new InvalidArgumentException(
+            "Cannot cancel payment request in status {$prStatus->value}. Only REQUIRES_ACTION or ACCEPTING_PAYMENTS can be canceled."
+        );
     }
 
     protected function makeIdempotencyKey(

@@ -154,4 +154,18 @@ class TransactionService
             throw $e;
         }
     }
+
+    public function cancelTransaction(int $transactionId, int $currentUserId)
+    {
+        DB::beginTransaction();
+        try {
+            $item = $this->transactionRepository->cancelTransaction($transactionId, $currentUserId);
+            DB::commit();
+            return $item;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            report($e);
+            throw $e;
+        }
+    }
 }

@@ -79,8 +79,11 @@ Route::prefix(config('app.api.version'))
                 Route::prefix('payments')->name('payments.')->group(function () {
                     Route::get('/', [CustomerPaymentController::class, 'index']);
                     Route::post('/', [CustomerPaymentController::class, 'store']);
-                    Route::get('{id}', [CustomerPaymentController::class, 'show']);
-                    // Route::delete('{id}', [CustomerPaymentController::class, 'cancel']);
+                    Route::prefix('{id}')->group(function () {
+                        Route::get('/', [CustomerPaymentController::class, 'show']);
+                        Route::put('/', [CustomerPaymentController::class, 'cancel']);
+                    });
+
                     Route::post('pay/{transactionId}', [CustomerPaymentController::class, 'pay']);
                 });
 
@@ -98,6 +101,7 @@ Route::prefix(config('app.api.version'))
                     Route::prefix('{id}')->group(function () {
                         Route::get('/', [CustomerTransactionController::class, 'show'])->name('show');
                         Route::post('/checkout', [CustomerTransactionController::class, 'checkout'])->name('checkout');
+                        Route::put('/cancel', [CustomerTransactionController::class, 'cancel'])->name('cancel');
                     });
                 });
             });

@@ -5,10 +5,8 @@ namespace App\Http\Controllers\Api\V1\Customer;
 use App\Data\PaymentData;
 use App\Data\TransactionData;
 use App\Data\UserData;
-use App\Data\Xendit\PaymentRequest\PaymentsApiPayData;
 use App\Http\Controllers\Controller;
 use App\Services\PaymentService;
-use App\Services\TransactionService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -104,6 +102,32 @@ class PaymentController extends Controller
                     'xendit'      => $result['xendit'],
                 ],
                 message: 'Payment request created successfully.'
+            );
+        } catch (\Throwable $th) {
+            [$name, $message, $code, $errors] = $this->normalizeException($th);
+            return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
+        }
+    }
+
+    public function cancel(int $id): JsonResponse
+    {
+        try {
+            /** @var UserData $user */
+            $user = $this->user; // asumsi sudah di-assign di base controller
+
+            // Ambil Payment dan authorize
+            $payment = $this->paymentService->getById($id, $user);
+            $this->authorize('cancel', $payment);
+
+            // Cancel di gateway + update lokal
+            [$updated, $xendit] = $this->paymentService->cancelPayment($payment);
+
+            return $this->successResponse(
+                data: [
+                    'payment' => $updated,
+                    'xendit'  => $xendit,
+                ],
+                message: 'Payment canceled successfully.'
             );
         } catch (\Throwable $th) {
             [$name, $message, $code, $errors] = $this->normalizeException($th);

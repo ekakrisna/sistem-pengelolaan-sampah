@@ -31,22 +31,6 @@ class TransactionRepository
         $this->transaction = $transaction;
     }
 
-    // protected function scopeForUser(?UserData $user, ?Builder $query = null): Builder
-    // {
-    //     $query ??= $this->transaction->newQuery();
-
-    //     if (!$user) return $query;
-
-    //     $role = $user->role->value ?? $user->role->name ?? (string) $user->role ?? null;
-    //     $role = strtolower((string) $role);
-
-    //     return match ($role) {
-    //         'customer' => $query->whereHas('payment', fn(Builder $q) => $q->where('customer_id', $user->id)),
-    //         'petugas'  => $query->whereHas('pickup',  fn(Builder $q) => $q->where('petugas_id',  $user->id)),
-    //         default    => $query,
-    //     };
-    // }
-
     public function all(?UserData $user = null)
     {
         return $this->transaction->newQuery()
@@ -366,6 +350,25 @@ class TransactionRepository
         return $trx->fresh($this->with);
     }
 
+    public function cancelTransaction(int $transactionId, int $currentUserId): Transaction
+    {
+        $trx = $this->transaction->newQuery()
+            ->where('id', $transactionId)
+            ->where('customer_id', $currentUserId)
+            ->where('status', 'draft')
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($trx->payments()->where('status', 'succeeded')->exists()) {
+            throw new \InvalidArgumentException('Cannot cancel transaction with successful payment.');
+        }
+
+        $trx->status = 'canceled';
+        $trx->save();
+
+        return $trx->fresh($this->with);
+    }
+
     /** ---------------- Helpers ---------------- */
     protected function recalculateTotals(Transaction $trx): void
     {
@@ -411,7 +414,7 @@ class TransactionRepository
         return 'INV-' . now()->format('Ym') . '-' . Str::upper(Str::uuid()->toString());
     }
 
-    public function lockAndGetForCheckout(int $transactionId, int $currentUserId): Transaction
+    protected function lockAndGetForCheckout(int $transactionId, int $currentUserId): Transaction
     {
         $trx = $this->transaction->newQuery()
             ->where('id', $transactionId)
@@ -513,7 +516,7 @@ class TransactionRepository
         }
     }
 
-    public function mergeDuplicates(Transaction $trx): void
+    protected function mergeDuplicates(Transaction $trx): void
     {
         $dups = TransactionItem::query()
             ->select([

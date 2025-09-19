@@ -68,10 +68,8 @@ class TransactionController extends Controller
         );
     }
 
-    /** ---------------- Cart Endpoints ---------------- */
     public function cart(): JsonResponse
     {
-        // Selalu ambil/buat draft cart milik user
         $cart = $this->transactionService->getOrCreateDraftCart($this->user->id);
 
         $this->authorize('view', $cart);
@@ -87,18 +85,15 @@ class TransactionController extends Controller
         try {
             $uid = $this->user->id;
 
-            // Jika transaction_id kosong → auto create cart
             $trxId = (int) $request->input('transaction_id', 0);
             if (!$trxId) {
                 $cart  = $this->transactionService->getOrCreateDraftCart($uid);
                 $trxId = $cart->id;
             }
 
-            // Authorize terhadap cart milik sendiri & status draft
             $trx = $this->transactionService->getById($trxId, $this->user);
             $this->authorize('addItem', $trx);
 
-            // Payload untuk repo (repo akan enforce fee price, merge dupes, dll)
             $payload = $request->only([
                 'item_type',
                 'user_address_id',
@@ -112,7 +107,6 @@ class TransactionController extends Controller
 
             $item = $this->transactionService->addItemToCart($trxId, $payload, $uid);
 
-            // Ambil cart terbaru (subtotal/total sudah di-recalc di repo)
             $cart = $this->transactionService->getById($trxId, $this->user);
 
             $data = TransactionData::from($cart);
@@ -133,7 +127,6 @@ class TransactionController extends Controller
             $uid   = $this->user->id;
             $trxId = (int) $request->integer('transaction_id');
 
-            // Wajib ada transaction_id untuk update
             $trx = $this->transactionService->getById($trxId, $this->user);
             $this->authorize('update', $trx);
 
@@ -218,6 +211,26 @@ class TransactionController extends Controller
             return $this->successResponse(
                 data: TransactionData::from($pending),
                 message: 'Checkout prepared successfully (review ready).'
+            );
+        } catch (\Throwable $th) {
+            [$name, $message, $code, $errors] = $this->normalizeException($th);
+            return $this->errorResponse($name, $message, statusCode: $code, errors: $errors);
+        }
+    }
+
+    public function cancel(Request $request, int $trxId): JsonResponse
+    {
+        try {
+            $uid = $this->user->id;
+
+            $trx = $this->transactionService->getById($trxId, $this->user);
+            $this->authorize('amend', $trx);
+
+            $canceled = $this->transactionService->cancelTransaction($trxId, $uid);
+
+            return $this->successResponse(
+                data: ['canceled' => (bool) $canceled],
+                message: $canceled ? 'Transaction canceled successfully.' : 'Transaction could not be canceled.'
             );
         } catch (\Throwable $th) {
             [$name, $message, $code, $errors] = $this->normalizeException($th);

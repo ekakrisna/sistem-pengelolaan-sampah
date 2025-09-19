@@ -2,7 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Payment;
 use App\Models\Transaction;
+use App\Policies\PaymentPolicy;
 use App\Policies\TransactionPolicy;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Vite;
@@ -13,6 +15,7 @@ class AppServiceProvider extends ServiceProvider
 
     protected $policies = [
         Transaction::class => TransactionPolicy::class,
+        Payment::class => PaymentPolicy::class,
     ];
 
     /**

@@ -6,8 +6,6 @@ use App\Data\UserData;
 use App\Enums\StatusPaymentEnum;
 use App\Enums\StatusPaymentSplitRouteEnum;
 use App\Enums\StatusTransactionEnum;
-use App\Enums\Xendit\Common\ChannelCode;
-use App\Enums\Xendit\Platform\ListAccounts\Status;
 use App\Models\Transaction;
 use App\Models\Payment;
 use App\Models\PaymentSplitRoute;
@@ -16,52 +14,16 @@ use Carbon\CarbonInterface;
 
 class PaymentRepository
 {
-
-    protected Payment $payment;
-
     protected array $with = ['customer', 'transaction.transaction_items'];
 
-    public function __construct(Payment $payment)
-    {
-        $this->payment = $payment;
-    }
+    public function __construct(protected Payment $payment) {}
 
-    /**
-     * Scope query berdasarkan role user:
-     * - super_admin/admin : full access
-     * - customer          : payment miliknya (customer_id = $user->id)
-     * - petugas           : payment yang terkait pickup di transaction dimana pickup.petugas_id = $user->id
-     */
-    // protected function scopeForUser(?UserData $user, ?Builder $query = null): Builder
-    // {
-    //     $query ??= $this->payment->newQuery();
-
-    //     if (!$user) {
-    //         return $query; // biarkan bebas; kalau mau, bisa diubah ke abort(403).
-    //     }
-
-    //     $role = $user->role->value ?? $user->role->name ?? (string) $user->role ?? null;
-    //     $role = strtolower((string) $role);
-
-    //     return match ($role) {
-    //         'customer' => $query->where('customer_id', $user->id),
-
-    //         'petugas'  => $query->whereHas('transaction.pickup', function (Builder $q) use ($user) {
-    //             $q->where('petugas_id', $user->id);
-    //         }),
-
-    //         // admin/super_admin (atau role lain) tanpa restriksi
-    //         default    => $query,
-    //     };
-    // }
-
-    public function all(?UserData $user = null)
+    public function all()
     {
         return $this->payment->newQuery()->with($this->with)->get();
     }
 
-
-    public function getById(int $id, ?UserData $user = null)
+    public function getById(int $id): Payment
     {
         return $this->payment->newQuery()
             ->with($this->with)
@@ -75,17 +37,15 @@ class PaymentRepository
         return $payment->load($this->with);
     }
 
-    public function update(array $data, int $id, ?UserData $user = null)
+    public function update(array $data, int $id)
     {
-        // $payment = $this->scopeForUser($user)->findOrFail($id);
         $payment = $this->payment->newQuery()->findOrFail($id);
         $payment->update($data);
         return $payment->load($this->with);
     }
 
-    public function delete(int $id, ?UserData $user = null)
+    public function delete(int $id)
     {
-        // $payment = $this->scopeForUser($user)->findOrFail($id);
         $payment = $this->payment->newQuery()->findOrFail($id);
         $payment->delete();
         return $payment;
@@ -98,7 +58,7 @@ class PaymentRepository
             ->first();
     }
 
-    public function paginateWithFilters(array $filters = [], int $pageSize = 10, ?UserData $user = null)
+    public function paginateWithFilters(array $filters = [], int $pageSize = 10)
     {
         $query = $this->payment->newQuery()->with($this->with);
 
@@ -242,6 +202,50 @@ class PaymentRepository
             'payment'     => $payment->fresh(),
             'transaction' => $trx->fresh(['transaction_items', 'payments']),
         ];
+    }
+
+    public function applyCancellationFromGateway(Payment $payment, array $xResp, string $reason = 'cancelled_by_user'): Payment
+    {
+        $statusFromGateway = strtoupper((string)($xResp['status'] ?? 'CANCELLED'));
+
+        // Map status Xendit menjadi status lokal yang tepat
+        $mapped = match ($statusFromGateway) {
+            'CANCELLED', 'CANCELED' => StatusPaymentEnum::CANCELED->value,
+            'EXPIRED'               => StatusPaymentEnum::EXPIRED->value,
+            'FAILED'                => StatusPaymentEnum::FAILED->value,
+            default                 => StatusPaymentEnum::CANCELED->value,
+        };
+
+        $failureCode    = $xResp['failure_code']    ?? $reason;
+        $failureMessage = $xResp['failure_message'] ?? 'Payment was cancelled.';
+
+        $payment->update([
+            'status'          => $mapped,
+            'failure_code'    => $failureCode,
+            'failure_message' => $failureMessage,
+            'paid_at'         => null,
+            'xendit_data'     => $this->mergeXenditData($payment->xendit_data ?? [], $xResp),
+        ]);
+
+        // Jika semua payment pada transaksi bukan 'SUCCEEDED', kembalikan trx ke DRAFT
+        $trx = $payment->transaction()->with('payments')->first();
+        if ($trx && !$trx->payments()->where('status', StatusPaymentEnum::SUCCEEDED->value)->exists()) {
+            $trx->update([
+                'status'     => StatusTransactionEnum::DRAFT->value,
+                'due_at'     => null,
+                'expires_at' => null,
+            ]);
+        }
+
+        return $payment->fresh(['transaction.payments']);
+    }
+
+    protected function mergeXenditData(array $current, array $incoming): array
+    {
+        // Simpel: timpa kunci yang sama, simpan payload terakhir
+        return array_replace_recursive($current, [
+            '_last_cancel_response' => $incoming,
+        ]);
     }
 
     protected function mapXenditStatusToPaymentStatus(
